@@ -21,6 +21,10 @@ agent gets stuck or asks a question only the origin team could answer, the kit h
 3. Answer only placeholder and decision questions. Refuse anything else with "the kit
    should tell you"; write the question down.
 
+Before scoring milestone 1, run `scripts/fill-placeholders.sh --check` on the placed files;
+it must report nothing. On an organisation, also prove that a green PR without the code
+owner's approval cannot merge.
+
 ## Target
 
 | Milestone 0                                                        | Milestone 1                                                               |

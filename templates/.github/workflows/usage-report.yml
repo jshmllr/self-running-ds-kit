@@ -67,7 +67,8 @@ jobs:
           node-version: 24
 
       # adopter: install dependencies here if the scanner needs any, for example
-      #   - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+      #   - run: {{PACKAGE_MANAGER_SETUP_CMD}}
+      #   - run: {{INSTALL_CMD}}
       # A scanner that uses Node built-ins only needs no install step.
 
       - name: Clone consumer repositories

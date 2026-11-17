@@ -1,0 +1,6 @@
+# The approver the branch rules require. The organisation ruleset turns on
+# "Require review from Code Owners", so this line is what names the team.
+# Merging into an existing CODEOWNERS: put this line first. The last matching
+# line wins, so your more specific lines below it keep working.
+# Delete this file if APPROVER_TEAM is "none".
+* @{{APPROVER_TEAM}}

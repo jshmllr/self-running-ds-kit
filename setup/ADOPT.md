@@ -7,8 +7,41 @@ names what proves it worked. Work milestone by milestone; milestone 0 before any
 The `adopt` skill (`skills/adopt/SKILL.md`) walks an agent through this file, asks the
 placeholder questions, and fills the templates.
 
-Check `README.md` § Prerequisites first: an organisation-owned repository, one admin, GitHub
-Actions, Claude Code (or another agent that reads `SKILL.md` files), Node.js, `gh`.
+Check `README.md` § Prerequisites first: a personal or organisation-owned repository, one
+admin, GitHub Actions, Claude Code (or another agent that reads `SKILL.md` files), Node.js, `gh`.
+
+## Starting checklist
+
+The kit does not scaffold a library. Before milestone 0, have these in place. A new library
+builds them in their own PRs first; an existing one points at what it already has.
+
+- One UI component with a behavioural test and a docs page.
+- A package manifest, a committed lockfile and a supported Node version.
+- Lint, typecheck, build and test commands, plus one combined validation command, all
+  passing locally. A required gate on a red baseline blocks everyone.
+- The package output consumers will use; for a typed library, public types that build.
+- An admin who can apply rules, and a second person if you want approved contracts.
+
+An existing library keeps its tools and jobs. Note which existing job covers each check
+rather than adding a duplicate.
+
+### Small-team defaults and later settings
+
+Milestones 0 and 1 are a good place to pause: a real gate, shared guidance and one
+contract. Install each later piece with its milestone.
+
+- **`ORG`**: your username on a personal account.
+- **`APPROVER_TEAM`**: the reviewer's team or handle, or `none`. With `none`, delete
+  `.github/CODEOWNERS` and reword "the approver team" in the adopted guidance.
+- **Working alone.** GitHub will not let you approve your own PR, so your first contract
+  stays `Draft, not reviewed` and milestone 1's approval proofs are recorded as not
+  reached. Everything else in milestones 0 and 1 can be proven.
+- **`CONSUMER_APPS`, `OUT_OF_LOOP_PACKAGES`**: `none` if you have none.
+- **Not publishing yet**: `RELEASE_APPROVER=repository owner`, `RELEASE_BOT_ACTOR=none`, and
+  delete the deploy-key entry from the ruleset's bypass list. Manual releases: name the
+  person and delete the bypass too. A bypass exists only for a real release actor.
+- **`ROADMAP_ISSUE`, `CONSUMER_REPOS`, `PUBLISH_WORKFLOWS`, `SAMPLE_COMPONENT`**: leave them
+  out of the values file until you install the workflows that use them.
 
 ## 1. Decide these first
 
@@ -28,9 +61,22 @@ Write each answer down where your team keeps decisions. Several later rules need
 
 ## 2. Fill the placeholders
 
-Every template uses `{{NAME}}` placeholders. Fill them with
-`scripts/fill-placeholders.sh <values-file> <target-dir>`; it fails if any placeholder is
-left. The values file is `KEY=value` per line.
+Every template uses `{{NAME}}` placeholders. Fill the scratch copy (§ 3) with:
+
+```bash
+sh ../self-running-ds-kit/scripts/fill-placeholders.sh <values-file> <scratch-dir> --milestone-0
+```
+
+The values file is one `KEY=value` per line, with no quotes or variable expansion. The
+script fails if any placeholder is left, except `FIRST_CONTRACT_PATH`, which
+`--milestone-0` lets wait until milestone 1. Once the first contract exists, replace
+`{{FIRST_CONTRACT_PATH}}` in your `CLAUDE.md` with its path and confirm nothing is left:
+
+```bash
+sh ../self-running-ds-kit/scripts/fill-placeholders.sh --check CLAUDE.md AGENTS.md .github .claude docs
+```
+
+`--check` only reports; it edits nothing.
 
 | Placeholder                | Meaning                                                   | Example                     |
 | -------------------------- | --------------------------------------------------------- | --------------------------- |
@@ -47,7 +93,9 @@ left. The values file is `KEY=value` per line.
 | `CONTRACT_HOME`            | Where a contract lives in your stack                      | the JSDoc on the exported component |
 | `FIRST_CONTRACT_PATH`      | Path of the first approved contract (fill after milestone 1) | `src/primitives/Tag/Tag.tsx` |
 | `PLANNING_SKILL`           | Skill the planning hook loads                             | `vercel-react-best-practices` |
-| `PACKAGE_MANAGER`          | Package manager                                           | `pnpm`                      |
+| `NODE_VERSION`             | Node version your library supports, for the gate jobs     | `24`                        |
+| `PACKAGE_MANAGER_SETUP_CMD` | Installs your pinned package-manager version in each gate job | `corepack enable`        |
+| `INSTALL_CMD`              | Install that refuses to change the lockfile               | `pnpm install --frozen-lockfile` |
 | `VALIDATE_CMD`             | One command that runs the right checks for a change       | `pnpm run validate`         |
 | `LINT_CMD` / `TYPECHECK_CMD` / `BUILD_CMD` / `TEST_CMD` | The four basic commands            | `pnpm run lint` …           |
 | `DOCS_SURFACE`             | Where component docs render                               | Storybook                   |
@@ -64,14 +112,35 @@ placeholder: the backfill workflow fills it on every run. The fill script leaves
 
 ## 3. Repo steps (contributor PRs)
 
-Copy `templates/` over your repository root, then edit:
+Work in a scratch copy, never over your repository: copy `templates/` (hidden folders
+included) to a temporary directory, keep only the current milestone's files, fill them,
+then review and merge them in. Where a file already exists, merge the kit's sections into
+it and keep everything else. Where a kit rule conflicts with one of yours, the team's
+policy owner picks one, and the winner lives in one place. Existing branch protections
+stay; the admin checks the combined result.
+
+For milestone 0, keep these and remove the rest. The six helper workflows,
+`.github/templates/` and `tooling/` arrive with their milestones.
+
+- `CLAUDE.md`, `AGENTS.md`, `.prettierignore`, `.claude/settings.json`,
+  `.claude/hooks/`, `.claude/commands/` and `.claude/skills/product-design/`.
+- `.github/workflows/pr-gate.yml`, the selected `.github/rulesets/` file, `.github/CODEOWNERS`,
+  `.github/labels.json` and `.github/pull_request_template.md`.
+- `.github/copilot-instructions.md` and `.github/instructions/` if you use Copilot.
+- `docs/automation-map.md`, trimmed to the gate, toolkit and fast lane.
+
+Copy `skills/*` and `THIRD-PARTY-NOTICES.md` from the kit separately. Where adopted guidance
+mentions automation from a later milestone, mark it as not installed yet.
+
+Then, per file:
 
 | File                                                         | Do                                                                                            |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `CLAUDE.md`                                                  | Keep the (core) sections as they are. Replace every (stack) section with your rules. Fill each `Source:`. Delete the KIT NOTEs. If you already have a CLAUDE.md, paste the core sections in. |
+| `CLAUDE.md`                                                  | Keep the (core) sections, once any conflict is settled. Replace every (stack) section with your rules. Fill each `Source:`. Delete the KIT NOTEs. If you already have a CLAUDE.md, paste the core sections in. |
 | `AGENTS.md`                                                  | Fill the hard stops from your stack adapter. Keep the routing table pointing at one home per rule. |
 | `.github/workflows/pr-gate.yml`                              | Replace the run steps with your commands, or copy the four gate pieces into your existing workflow. |
 | `.github/rulesets/`                                          | Keep one file: `default-branch-gate-and-queue.json` for an organisation, `default-branch-gate-only.json` for a personal account. Delete the other. |
+| `.github/CODEOWNERS`                                         | Organisation route, or a personal account with a named approver. Put the kit's line first in an existing file. Delete it if `APPROVER_TEAM` is `none`. |
 | `.github/pull_request_template.md`, `copilot-instructions.md`, `instructions/` | As they are; adjust `applyTo` globs to your file types.                    |
 | `.claude/settings.json`, `.claude/hooks/`, `.claude/commands/validate.md` | Fill commands; write the Workspace ownership section of `validate.md`.       |
 | `.claude/skills/product-design/`                             | Start with one surface you have evidence for; list every gap honestly.                        |
@@ -85,10 +154,28 @@ Open these as separate PRs, in this order: toolkit, fast lane, gate, then (miles
 first contract, then rules. Each PR description: What / Why / If we don't do it / In plain
 words.
 
+### CI setup before enabling the gate
+
+Each gate job starts on a fresh runner, so it sets up Node, the package manager and the
+dependencies itself:
+
+- **`NODE_VERSION`**: a version your library supports. The contract and guidance jobs pin
+  Node 24 on their own, and the milestone 4 tooling needs 22.18 or later.
+- **`PACKAGE_MANAGER_SETUP_CMD`**: installs the version your project already pins in
+  `packageManager`. pnpm or Yarn: `corepack enable` (Node 24 ships Corepack; on later Node,
+  `npm install --global corepack && corepack enable`). npm with the version Node ships:
+  `npm --version`, which only confirms npm is there.
+- **`INSTALL_CMD`**: `npm ci`, `pnpm install --frozen-lockfile` or `yarn install --immutable`.
+
+Private registries are set up with repository secrets, never in the values file. Adjust the
+path filters to your folders. Without workspace packages, delete the workspace-package job
+and its entry in the gate's `needs`; with them, replace its placeholder `echo` with real
+checks.
+
 ## 4. Admin steps (host settings)
 
-Milestone 0: `docs/milestones/0-gate.md` § Admin steps (rules, merge queue, bypass for the
-release actor, labels). Milestone 1: the `contract` label. Later milestones list their own.
+Milestone 0: `docs/milestones/0-gate.md` § Admin steps (rules, merge queue, code owners,
+bypass for the release actor, labels). Milestone 1: the `contract` label. Later milestones list their own.
 
 ## 5. Prove it
 

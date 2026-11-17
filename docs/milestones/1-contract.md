@@ -62,7 +62,10 @@ point out a missing test or an unapproved change.
    row, and the scoped instructions file. If the rules PR and the fast-lane PR edit the same
    section, stack the rules PR on the fast-lane PR. Point the "worked example" line at the
    first contract.
-7. Record the two choices below as decisions with a `Source:` line.
+7. Replace `{{FIRST_CONTRACT_PATH}}` in `CLAUDE.md` with the contract's path, then run
+   `scripts/fill-placeholders.sh --check` on the files you placed; it must report nothing.
+   Record the two choices below as decisions with a `Source:` line. Working alone: see
+   `setup/ADOPT.md` § Small-team defaults.
 
 ## Proof
 

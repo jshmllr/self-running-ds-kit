@@ -9,6 +9,10 @@ written and how an adopting team treats it.
 | **Local**: same idea, local details     | The idea is fixed; names, paths and commands are placeholders | Fill the placeholders                         |
 | **Adapter**: depends on tooling         | One stack shipped first; the kit says what another stack swaps | Pick an adapter or write one                  |
 
+Status describes the system the kit came from: **Built** means it exists there; **Proven**
+means a named check or run passed there. Neither means this packaged kit has passed in a
+fresh repository yet; `setup/proof-run.md` is that test.
+
 ## Core
 
 | Kit file                                                          | Milestone | Status  |
@@ -41,9 +45,10 @@ written and how an adopting team treats it.
 
 | Kit file                                                          | Placeholders it carries                                              |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `templates/.github/workflows/pr-gate.yml`                         | `VALIDATION_WORKFLOW`, `GATE_CHECK_NAME`, `DEFAULT_BRANCH`, `COMPONENT_DIR`, the four commands, `PACKAGE_MANAGER` |
+| `templates/.github/workflows/pr-gate.yml`                         | `VALIDATION_WORKFLOW`, `GATE_CHECK_NAME`, `DEFAULT_BRANCH`, `COMPONENT_DIR`, the four commands, `NODE_VERSION`, `PACKAGE_MANAGER_SETUP_CMD`, `INSTALL_CMD` |
 | `templates/.github/rulesets/default-branch-gate-and-queue.json`   | `DEFAULT_BRANCH`, `GATE_CHECK_NAME`                                  |
 | `templates/.github/rulesets/default-branch-gate-only.json`        | `DEFAULT_BRANCH`, `GATE_CHECK_NAME` (personal account, no queue)     |
+| `templates/.github/CODEOWNERS`                                    | `APPROVER_TEAM` (names the approver the queue ruleset requires)      |
 | `templates/.github/copilot-instructions.md`                       | `DS_NAME`, `PACKAGE`, `DOCS_SURFACE`, `COMPONENT_DIR`, `TOKENS_PATH` |
 | `templates/.claude/settings.json`                                 | the four commands, `VALIDATE_CMD`                                    |
 | `templates/.claude/commands/validate.md`                          | `VALIDATE_CMD`, the four commands; the Workspace ownership section is yours to write |

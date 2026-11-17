@@ -27,6 +27,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read  # paths-filter reads PR files through the API
 
 jobs:
   # ------------------------------------------------------------------
@@ -85,8 +86,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version-file: '.nvmrc'
-      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+          node-version: "{{NODE_VERSION}}"
+      - run: {{PACKAGE_MANAGER_SETUP_CMD}}
+      - run: {{INSTALL_CMD}}
       - run: {{LINT_CMD}}
       - run: {{TYPECHECK_CMD}}
 
@@ -97,8 +99,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version-file: '.nvmrc'
-      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+          node-version: "{{NODE_VERSION}}"
+      - run: {{PACKAGE_MANAGER_SETUP_CMD}}
+      - run: {{INSTALL_CMD}}
       - run: {{BUILD_CMD}}
       - run: {{TEST_CMD}}
 
@@ -111,8 +114,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version-file: '.nvmrc'
-      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+          node-version: "{{NODE_VERSION}}"
+      - run: {{PACKAGE_MANAGER_SETUP_CMD}}
+      - run: {{INSTALL_CMD}}
       - run: echo "Replace with each package's own lint, typecheck, build and test commands."
 
   # ------------------------------------------------------------------

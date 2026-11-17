@@ -37,7 +37,9 @@ are in place.
    first; it lists every rule and its source.
 2. **Check the release automation's push path.** Find the actor that pushes version bumps
    and tags to the default branch (`{{RELEASE_BOT_ACTOR}}`). It must be on the bypass list
-   of the new rules, or the first release after enabling fails at `git push`.
+   of the new rules, or the first release after enabling fails at `git push`. The ruleset
+   ships a deploy-key bypass. With no release bot, delete that entry; if the actor is
+   something else, replace the entry with that actor.
 3. **Add the required check and the merge queue.** Import
    `templates/.github/rulesets/default-branch-gate-and-queue.json` (Repository settings →
    Rules → Rulesets → Import), or post it with
@@ -56,7 +58,12 @@ are in place.
 
    If the org ruleset targets more repositories than this one, add the check in a ruleset
    scoped to this repository only, or every other repo is blocked.
-4. **Create the labels** from `templates/.github/labels.json`:
+4. **Name the approver.** The queue ruleset requires one approval from a code owner, and
+   drops it when new commits arrive. The ruleset cannot name a team by itself:
+   `.github/CODEOWNERS` does, with `* @{{APPROVER_TEAM}}`. Merge that file before turning the
+   ruleset on, and give the team write access to the repository. Keep any stricter approval
+   rule you already have.
+5. **Create the labels** from `templates/.github/labels.json`:
    `gh label create fast-lane --color 0E8A16 --description "Docs or user-visible copy only"`
    and the others marked milestone 0.
 
@@ -74,18 +81,19 @@ rulesets free; a private one needs a paid personal plan or classic branch protec
    tests each PR on top of the ones ahead of it; without a queue, this setting is what stops
    two green PRs from merging into a red default branch. Press "Update branch" before the
    final run.
-3. **Approvals.** A personal account has no teams, so `{{APPROVER_TEAM}}` has no meaning.
-   The ruleset ships with zero required approvals because an author cannot approve their
-   own PR; a two-person project raises it to one. For a named approver, add a
-   `.github/CODEOWNERS` file and turn on "Require review from Code Owners". The contract
-   Status line still names the person who approved.
+3. **Approvals.** A personal account has no teams, so `{{APPROVER_TEAM}}` is a person's
+   handle or `none`. The ruleset ships with zero required approvals because an author cannot
+   approve their own PR; a two-person project raises it to one. For a named approver, keep
+   `.github/CODEOWNERS` with their handle and turn on "Require review from Code Owners". The
+   contract Status line still names the person who approved.
 4. **The workflow stays as it is.** The `merge_group` trigger never fires on a personal
-   repository and costs nothing. Leave it; moving to an organisation later needs no edit.
+   repository and costs nothing. Leave it; moving to an organisation later needs no workflow edit.
 5. **Proofs.** Green, red, skipped, fast lane and toolkit apply unchanged. The queue proof
    does not; record "no queue, personal account" in its place.
 
-Moving to an organisation later: transfer the repository, delete the gate-only ruleset,
-import the queue ruleset, and turn "Require branches up to date" off.
+Moving to an organisation later: transfer the repository, add `.github/CODEOWNERS` with the
+approver team, delete the gate-only ruleset, import the queue ruleset, and turn "Require
+branches up to date" off.
 
 ### Repo steps (a PR from a contributor)
 
@@ -113,6 +121,9 @@ import the queue ruleset, and turn "Require branches up to date" off.
 - **Queue:** the first real merge-queue run after the admin steps. Watch the change
   detection step first if anything fails. Personal account: not applicable; see § Personal
   account.
+- **Approval:** a green PR without the approver team's review cannot merge; one approval
+  from the team lets it through. A bot review never counts. Working alone: not reached;
+  see `setup/ADOPT.md` § Small-team defaults.
 - **Fast lane:** the fast-lane PR is itself the first fast-lane case: label on, box ticked.
 - **Toolkit:** a fresh clone (`gh repo clone`) with no local skills runs
   `claude -p "/review-triage <pr-url> --all-comments"` and the PR shows the posted summary.

@@ -8,6 +8,10 @@ It was extracted from a production design system's roadmap.
 
 The kit ships as a folder you copy from and as a Claude Code plugin you install.
 
+It provides the workflow around a coded component library: guidance, component contracts,
+checks and proposed fixes. Designers and design managers can use it to define the process;
+an engineer or coding agent and a repository admin are needed to wire up the checks.
+
 ## Tl;Dr
 
 Right now, when someone changes a building block (a button, a menu, a form field) a lot of good checking happens, but it is optional: a change can go out with problems, and when something breaks it waits for a person to notice. 
@@ -17,6 +21,21 @@ This kit changes the order. Before a piece is built, its promise is written down
 Then helpers build in small pieces, check against the promise, diagnose their own mistakes and propose fixes, learn from review feedback, and keep the to-do list tidy. 
 
 People stay in charge of what to build, whether it's correct, what ships, what rolls back, and what the rules are.
+
+## Choose your starting point
+
+- **New library:** first establish a small working library with a component, tests, a docs
+  surface and working lint, typecheck, build and test commands. A framework starter is a
+  starting point; it may still need tests, documentation and package output added. Use the
+  [starting checklist](setup/ADOPT.md#starting-checklist) before installing this kit.
+- **Existing design system:** keep your components, tokens, docs and release process.
+  Inventory your current checks and policies, then merge the kit into them one milestone
+  at a time. The [adoption guide](setup/ADOPT.md#3-repo-steps-contributor-prs) explains conflicts
+  and preserving existing files.
+- **Solo or small team:** milestones 0–1 are a useful first adoption target: a real gate,
+  shared guidance and one component contract. Later automation can wait. See
+  [the personal-account route](#trying-it-on-a-personal-account) and the
+  [small-team defaults](setup/ADOPT.md#small-team-defaults-and-later-settings).
 
 ## The six milestones
 
@@ -29,8 +48,12 @@ People stay in charge of what to build, whether it's correct, what ships, what r
 | 4 | Self-learning | A guidance check, a weekly evidence digest, guidance evals, backfill drafts for old components | The guidance check, the evidence digest, the backfill agent | The guidance evals |
 | 5 | Self-managing | Triage proposals; a read-only usage report from consumer apps | The triage agent, the usage report workflow | The usage scanner |
 
-Every milestone is built and proven at the origin system. The kit ships as files every
-piece that works in any repository. **The "You build" pieces are part of the plan, not extras:** a
+Every piece was built at the design system the kit came from. Some are still waiting on
+approval there, and the merge queue has not run there yet. Nobody has yet installed this
+packaged kit in a fresh repository from start to finish; [`setup/proof-run.md`](setup/proof-run.md)
+is that test.
+
+**The "You build" pieces are part of the plan, not extras:** a
 milestone is not done until they exist. Each one reads your own code, so it has to be
 written for your stack; the milestone doc says exactly what it must do, who decides, and
 gives a ready-to-paste prompt to build it. None needs a paid service or an enterprise plan.
@@ -53,7 +76,7 @@ templates/                     ← files that go into your repository, with {{PL
   docs/automation-map.md       ← what runs, when, and where a person decides: for approvers
   .github/  workflows/pr-gate.yml + six helper workflows (contract review, fix proposal,
             triage, backfill, evidence digest, usage report) · templates/ ·
-            rulesets/*.json · labels.json · pull_request_template.md ·
+            rulesets/*.json · CODEOWNERS · labels.json · pull_request_template.md ·
             copilot-instructions.md · instructions/
   tooling/  guidance/ (guidance check) · evidence/ (evidence digest) · README.md
   .claude/  settings.json · hooks/load-planning-skill.js · commands/validate.md ·
@@ -76,7 +99,7 @@ LICENSE                        ← CC BY-SA 4.0 for the kit's own files
 
 ### Prerequisites
 
-Have these before the first step. The kit itself has no build and nothing to install from a package registry; everything it needs is already on a working developer machine.
+Have these before the first step. The kit itself has no build and nothing to install from a package registry; your library must pass the [starting checklist](setup/ADOPT.md#starting-checklist) first.
 
 | Need                                   | Why                                                                                  | Without it                                   |
 | -------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------- |
@@ -85,7 +108,7 @@ Have these before the first step. The kit itself has no build and nothing to ins
 | **Admin on that repository** (one person) | Rulesets, the merge queue, labels and bypasses are host settings                      | Checks run but never block a merge           |
 | **GitHub Actions** enabled              | The gate is a workflow; the ruleset names it by its job name                          | No gate                                      |
 | **Claude Code** (CLI, current release)  | Hosts the plugin, the skills, the planning hook and the `/validate` command           | Use the files as plain docs; skills are Markdown and read fine in any agent that loads `SKILL.md` files |
-| **Node.js 18+**                         | The planning hook is a Node script; the four commands your gate runs are your own     | The hook never fires; everything else works  |
+| **Node.js** your library supports; 22.18+ from milestone 4 | The planning hook and the milestone 4 tooling are Node scripts; the four commands your gate runs are your own | The planning hook never fires and the milestone 4 tooling cannot run |
 | **`gh` CLI**, logged in                 | The `review-triage` skill and the admin runbook use it; the ruleset is posted with it  | Do the admin steps in the browser instead    |
 | A POSIX shell with `sed`                | `scripts/fill-placeholders.sh`                                                        | Fill the `{{PLACEHOLDERS}}` by hand          |
 | **A Claude credential** as a repository secret (milestones 2 to 5) | The helper agents run Claude Code inside GitHub Actions | Each agent step skips with a notice; the plain checks still run |
@@ -112,7 +135,7 @@ claude plugin install /path/to/self-running-ds-kit
 
 The plugin puts the toolkit skills (`adopt`, `contract-review`, `review-triage` and the vendored ones) in your agent. The `adopt` skill reads `setup/ADOPT.md`, asks the decisions and placeholder questions in one round, fills `templates/`, and opens the milestone 0 PRs.
 
-Once the repository is public, the one-line install is:
+From Claude Code, install through this repository’s own marketplace manifest (this is not an official marketplace listing):
 
 ```text
 /plugin marketplace add jshmllr/self-running-ds-kit
@@ -122,15 +145,19 @@ Once the repository is public, the one-line install is:
 **Route B, copy the files** (no plugin system, or another agent):
 
 ```bash
-git clone <this repository> self-running-ds-kit
+git clone https://github.com/jshmllr/self-running-ds-kit.git
 cd your-design-system
-cp -R ../self-running-ds-kit/skills/* .claude/skills/
-cp ../self-running-ds-kit/THIRD-PARTY-NOTICES.md .claude/skills/
-# write KEY=value lines for the placeholders in setup/ADOPT.md § 2, then:
-sh ../self-running-ds-kit/scripts/fill-placeholders.sh values.env ../self-running-ds-kit/templates
-# move the filled templates into your repository root, merging into any existing
-# CLAUDE.md / AGENTS.md / workflow rather than overwriting
+kit_stage=$(mktemp -d)
+cp -R ../self-running-ds-kit/templates/. "$kit_stage/"
+# trim "$kit_stage" to the milestone 0 files and write values.env, then:
+sh ../self-running-ds-kit/scripts/fill-placeholders.sh values.env "$kit_stage" --milestone-0
 ```
+
+This fills a scratch copy and leaves the kit untouched. Before filling, keep only the
+milestone 0 files listed in [`setup/ADOPT.md`](setup/ADOPT.md) § 3, and write `values.env`
+from § 2. Then merge the filled files into your repository, and copy `skills/*` and
+`THIRD-PARTY-NOTICES.md` into `.claude/skills/`. Where a file already exists, § 3 says how
+to merge.
 
 ### Day Zero
 
@@ -144,11 +171,13 @@ sh ../self-running-ds-kit/scripts/fill-placeholders.sh values.env ../self-runnin
 ### Trying it on a personal account
 
 You do not need an organisation to try the kit; you lose only the merge queue. This is the
-shortest honest test, about an hour, in a fresh repository under your own account.
+smallest adoption route, in a fresh repository under your own account. The time depends
+on whether your library already passes the starting checklist.
 
 1. **Make a public repository** (public, so rulesets are free) with a tiny component library
    in it: one component, one test, and a `package.json` with `lint`, `typecheck`, `build`
-   and `test` scripts. A starter from your framework's CLI is enough.
+   and `test` scripts, plus a docs surface. Complete the starting checklist first; a
+   framework starter alone may not provide these pieces.
 2. **Install the kit** by Route A or B and say "adopt the kit". Answer the decisions and
    placeholders; `ORG` is your username.
 3. **Open the gate PR** with `.github/workflows/pr-gate.yml`. Merge it yourself once it is
@@ -164,11 +193,13 @@ shortest honest test, about an hour, in a fresh repository under your own accoun
    the template. The planning stages are skipped; the gate still ran.
 7. **Milestone 1.** Write the contract for your one component in its own docs source, open
    the contract PR, and ask one other person to approve it so the Status line can name
-   them. Solo? Write `Draft, not reviewed` and leave it; the kit is honest about that.
+   them. Solo? Leave it `Draft, not reviewed`.
 
 What you cannot test alone: the merge queue, and approvals, since GitHub will not let you
 approve your own PR. Everything else in milestones 0 and 1 behaves exactly as it will in an
-organisation, and moving the repository into one later needs no edit to the files.
+organisation. Moving to an organisation later means swapping the ruleset and adding
+CODEOWNERS ([`0-gate.md`](docs/milestones/0-gate.md) § Personal account); the workflow
+stays as it is.
 
 ### What to tell your team
 
