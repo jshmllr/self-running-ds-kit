@@ -1,9 +1,9 @@
 # Milestone 2 of 6: Stronger verify
 
-**Status in the kit:** Built at the origin system, with dry runs proven on GitHub, and
-waiting there for its architecture and AI review. The kit carries the contract review
-workflow and the gate wiring. **You build** the contract checker and the visual check; this
-document says what each must do.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. Built, with dry runs proven on GitHub. The kit carries the contract
+review workflow and the gate wiring. **You build** the contract checker and the visual
+check; this document says what each must do.
 
 **Depends on:** milestone 0 (the gate, so a new check can block a merge) and milestone 1
 (the contract, so there is something to check a change against).

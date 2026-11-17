@@ -1,10 +1,10 @@
 # Milestone 1 of 6: Agree the contract
 
-**Status in the kit:** Built. The first contract (on a small label component) and the
-written rules exist at the origin system as draft PRs, reviewed by an engineering reviewer
-and an independent agent, waiting on the approver team. The form, the proof rule, the
-`Open:` marking, the Status-flip procedure and the review checklist below are the result of
-that review; nothing here is untested on a real component.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. Built. The form, the proof rule, the `Open:` marking, the
+Status-flip procedure and the review checklist below come from a first contract (on a small
+label component) and its written rules, reviewed by an engineering reviewer and an
+independent agent; nothing here is untested on a real component.
 
 ## Goal
 

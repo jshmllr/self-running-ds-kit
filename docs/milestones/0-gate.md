@@ -1,8 +1,8 @@
 # Milestone 0 of 6: Make the gate real
 
-**Status in the kit:** Built. All three pieces exist at the origin system with evidence,
-and are waiting on the approver team. The gate's red, green and skipped cases are proven on
-real runs; the merge-queue path is reasoned, not run, until a queue exists.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. All three pieces are built. The gate's red, green and skipped cases
+are proven on real runs; the merge-queue path is reasoned, not run, until a queue exists.
 
 ## Goal
 

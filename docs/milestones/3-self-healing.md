@@ -1,8 +1,8 @@
 # Milestone 3 of 6: Self-healing
 
-**Status in the kit:** Built at the origin system, with dry runs proven on GitHub, and
-waiting there for its architecture and AI review. The kit carries the fix proposal
-workflow. **You build** the release suggestion; this document says what it must do.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. Built, with dry runs proven on GitHub. The kit carries the fix
+proposal workflow. **You build** the release suggestion; this document says what it must do.
 
 **Depends on:** milestone 0 (the gate is what defines "red") and milestone 1 (the contract
 is what the release suggestion reads to tell a breaking change from a fix).

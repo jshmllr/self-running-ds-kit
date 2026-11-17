@@ -12,6 +12,21 @@ It provides the workflow around a coded component library: guidance, component c
 checks and proposed fixes. Designers and design managers can use it to define the process;
 an engineer or coding agent and a repository admin are needed to wire up the checks.
 
+An agentic, executable design system, not a design system in a box. Open your coding agent
+with the adoption prompt; the agent should follow
+[`skills/adopt/SKILL.md`](skills/adopt/SKILL.md) and propose a PR, not merge.
+
+[![Open in Claude Code](https://img.shields.io/badge/Open_in-Claude_Code-D97757?style=for-the-badge&logo=anthropic&logoColor=white)](https://claude.ai/code/new?q=Adopt%20the%20Self-Running%20Design%20System%20Kit%20into%20this%20repo%20by%20following%20skills%2Fadopt%2FSKILL.md%20from%20https%3A%2F%2Fgithub.com%2Fjshmllr%2Fself-running-ds-kit.%20Propose%20changes%20as%20a%20PR%3B%20do%20not%20merge.)
+[![Open in Cursor](https://img.shields.io/badge/Open_in-Cursor-000000?style=for-the-badge)](https://cursor.com/link/prompt?text=Adopt%20the%20Self-Running%20Design%20System%20Kit%20into%20this%20repo%20by%20following%20skills%2Fadopt%2FSKILL.md%20from%20https%3A%2F%2Fgithub.com%2Fjshmllr%2Fself-running-ds-kit.%20Propose%20changes%20as%20a%20PR%3B%20do%20not%20merge.)
+[![Open in Codex](https://img.shields.io/badge/Open_in-Codex-000000?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/codex)
+
+The Codex button opens Codex only; it does not prefill the prompt. In the Codex
+desktop app, paste this link to prefill it:
+
+```text
+codex://new?prompt=Adopt%20the%20Self-Running%20Design%20System%20Kit%20into%20this%20repo%20by%20following%20skills%2Fadopt%2FSKILL.md%20from%20https%3A%2F%2Fgithub.com%2Fjshmllr%2Fself-running-ds-kit.%20Propose%20changes%20as%20a%20PR%3B%20do%20not%20merge.
+```
+
 ## Tl;Dr
 
 Right now, when someone changes a building block (a button, a menu, a form field) a lot of good checking happens, but it is optional: a change can go out with problems, and when something breaks it waits for a person to notice. 
@@ -59,10 +74,8 @@ people approve from the work agents propose, and show which later pieces your te
 | 4 | Self-learning | A guidance check, a weekly evidence digest, guidance evals, backfill drafts for old components | The guidance check, the evidence digest, the backfill agent | The guidance evals |
 | 5 | Self-managing | Triage proposals; a read-only usage report from consumer apps | The triage agent, the usage report workflow | The usage scanner |
 
-Every piece was built at the design system the kit came from. Some are still waiting on
-approval there, and the merge queue has not run there yet. Nobody has yet installed this
-packaged kit in a fresh repository from start to finish; [`setup/proof-run.md`](setup/proof-run.md)
-is that test.
+Early release: the fresh-repository proof run has not been done yet;
+[`setup/proof-run.md`](setup/proof-run.md) is that test.
 
 **The "You build" pieces are part of the plan, not extras:** a
 milestone is not done until they exist. Each one reads your own code, so it has to be
@@ -102,7 +115,7 @@ setup/proof-run.md             ← the fresh-repo test: does it work without us?
 scripts/fill-placeholders.sh
 THIRD-PARTY-NOTICES.md
 .gitignore
-LICENSE                        ← CC BY-SA 4.0 for the kit's own files
+LICENSE                        ← PolyForm Shield 1.0.0 for Josh's own files
 .claude-plugin/plugin.json
 ```
 
@@ -252,11 +265,21 @@ Created and maintained by **Josh Miller**.
 
 ## Licence
 
-The kit's own files (docs, templates, scripts, the `adopt`, `contract-review` and `review-triage` skills) are © 2026 [Josh Miller](https://github.com/jshmllr) and licensed under [Creative Commons Attribution-ShareAlike 4.0](LICENSE) (CC BY-SA 4.0).
+The kit's own files (docs, templates, scripts, and the `adopt`, `contract-review` and
+`review-triage` skills) are © 2026 [Josh Miller](https://github.com/jshmllr) and licensed
+under [PolyForm Shield 1.0.0](LICENSE)
+([canonical text](https://polyformproject.org/licenses/shield/1.0.0)).
+PolyForm Shield 1.0.0 covers only Josh Miller's own files.
 
-Use it, adapt it, use it at work; keep the credit and release what you build from it under the same licence.
+Vendored third-party skills from [mattpocock/skills](https://github.com/mattpocock/skills)
+and [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) stay under their
+authors' MIT licences. Notices for those skills stay in
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
-Nobody may take it closed or claim it as their own. The vendored skills under `skills/` and `adapters/*/skills/` keep their authors' MIT licences, listed in `THIRD-PARTY-NOTICES.md`.
+Training, resale or bundling? [Contact me](https://github.com/jshmllr) for a commercial license.
+
+"Self-Running Design System Kit" is Josh Miller's name for this project; forks and
+derivatives must not use the name or imply endorsement.
 
 ## Before publishing this kit
 

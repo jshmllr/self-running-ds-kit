@@ -1,11 +1,11 @@
 # Milestone 4 of 6: Self-learning
 
-**Status in the kit:** Built at the origin system and waiting there for its architecture
-and AI review. The guidance check passes on the origin's own guidance, and the evidence
-digest and backfill dry runs pass on GitHub. The guidance evals are proven on fixed
-examples only, not yet with a live model. The kit carries the guidance check, the evidence
-digest and the backfill workflow. **You build** the guidance evals; this document says what
-they must do.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. Built. The guidance check passes on real project guidance, and the
+evidence digest and backfill dry runs pass on GitHub. The guidance evals are proven on
+fixed examples only, not yet with a live model. The kit carries the guidance check, the
+evidence digest and the backfill workflow. **You build** the guidance evals; this document
+says what they must do.
 
 **Depends on:** milestone 1 (contracts are the form a backfill draft fills in) and
 milestone 2 (review comments are the evidence the loop learns from).

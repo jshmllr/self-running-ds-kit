@@ -1,9 +1,10 @@
 # Milestone 5 of 6: Self-managing
 
-**Status in the kit:** Triage and the usage report are built at the origin system, with dry
-runs proven on GitHub, and waiting there for their architecture and AI review. Distribution
-is still designed only. The kit carries the triage workflow and the usage report workflow.
-**You build** the usage scanner the report runs; this document says what it must do.
+**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
+has not been done yet. Triage and the usage report are built, with dry runs proven on
+GitHub. Distribution is still designed only. The kit carries the triage workflow and the
+usage report workflow. **You build** the usage scanner the report runs; this document says
+what it must do.
 
 **Depends on:** milestone 1 (contracts are what gets distributed to consumers) and the
 loops of milestones 2 to 4 (triage and the usage report are most useful once those produce
