@@ -283,6 +283,6 @@ derivatives must not use the name or imply endorsement.
 
 ## Before publishing this kit
 
-- Run `claude plugin validate .` after any change to `.claude-plugin/`. `LICENSE` is the unmodified CC BY-SA 4.0 text so the host detects it; leave it as it is.
+- Run `claude plugin validate .` after any change to `.claude-plugin/`. `LICENSE` is the unmodified PolyForm Shield 1.0.0 text plus the required notice; leave it as it is.
 - Run the proof run once on a throwaway repository and fix every hole it finds.
 - Milestones 2 to 5 each include pieces the adopting team builds. Say so wherever the kit is announced.
