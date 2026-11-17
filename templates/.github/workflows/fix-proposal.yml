@@ -1,0 +1,230 @@
+name: Fix proposal
+
+# When a workflow fails on the default branch, this gathers the facts (which job and step
+# failed, the log tail, the commits since the last green run) and asks an agent for a
+# diagnosis and a proposed fix, then opens an issue labelled `needs-person`. A person decides
+# whether the fix lands; nothing here merges, retries, reverts or removes a test from the
+# gate. When the facts point at a timeout in a test file the failing commits never touched,
+# the issue is a quarantine *proposal*, and taking a test out of the gate still needs a
+# person's approval.
+#
+# Two ways to try it without a real failure: `workflow_dispatch` takes any past run id (once
+# this file is on the default branch), and a pull request that changes this file dry-runs it
+# against the most recent failed run. In both cases the proposal goes to the job summary
+# instead of an issue, unless `dry_run` is turned off on a dispatch.
+
+on:
+  workflow_run:
+    # The validation workflow plus every publish workflow whose failure a person should
+    # hear about. One name per line, exactly as each workflow's `name:` reads, for example:
+    #   - {{VALIDATION_WORKFLOW}}
+    #   - Publish design system
+    #   - Publish tokens
+    workflows:
+      - {{VALIDATION_WORKFLOW}}
+      - {{PUBLISH_WORKFLOWS}}
+    types: [completed]
+  pull_request:
+    paths:
+      - .github/workflows/fix-proposal.yml
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: The id of a completed run to diagnose
+        required: true
+      dry_run:
+        description: Write the proposal to the job summary instead of opening an issue
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  propose:
+    name: Diagnose and propose a fix
+    if: |
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == '{{DEFAULT_BRANCH}}')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.run_id || github.event.workflow_run.id }}
+      DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pick the most recent failed run (pull request dry run)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?status=failure&per_page=1" --jq '.workflow_runs[0].id // empty')
+          if [ -z "$run_id" ]; then
+            echo "::notice title=Fix proposal::No failed run to dry-run against."
+            exit 0
+          fi
+          echo "RUN_ID=$run_id" >> "$GITHUB_ENV"
+
+      - name: Gather the facts
+        id: facts
+        if: env.RUN_ID != ''
+        run: |
+          set -euo pipefail
+          run_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")
+          workflow=$(jq -r '.name' <<<"$run_json")
+          branch=$(jq -r '.head_branch' <<<"$run_json")
+          head_sha=$(jq -r '.head_sha' <<<"$run_json")
+          workflow_id=$(jq -r '.workflow_id' <<<"$run_json")
+          run_url=$(jq -r '.html_url' <<<"$run_json")
+          event=$(jq -r '.event' <<<"$run_json")
+          echo "workflow=$workflow" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+          # The last green run of the same workflow on the same branch bounds the suspect range.
+          last_green=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow_id/runs?branch=$branch&status=success&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // empty')
+
+          {
+            echo "# Facts"
+            echo
+            echo "- Workflow: $workflow ($event) on \`$branch\`"
+            echo "- Run: $run_url"
+            echo "- Failing commit: $head_sha"
+            if [ -n "$last_green" ]; then
+              echo "- Last green run of this workflow on \`$branch\`: $last_green"
+            else
+              echo "- No earlier green run of this workflow on \`$branch\` was found."
+            fi
+            echo
+            echo "## Failed jobs and steps"
+            echo
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
+              --jq '.jobs[] | select(.conclusion == "failure") | "- **\(.name)**: " + ([.steps[] | select(.conclusion == "failure") | .name] | join(", "))'
+            echo
+            echo "## Commits since the last green run"
+            echo
+            if [ -n "$last_green" ] && git cat-file -e "$last_green" 2>/dev/null && git cat-file -e "$head_sha" 2>/dev/null; then
+              git log --no-merges --format='- %h %s (%an)' "$last_green..$head_sha" | head -40
+              echo
+              echo "## Files changed in that range"
+              echo
+              git diff --stat "$last_green" "$head_sha" | tail -60
+            else
+              echo "The range could not be computed in this checkout; use the failing commit alone."
+            fi
+            echo
+            echo "## Log tail of each failed job"
+            echo
+            for job_id in $(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" --jq '.jobs[] | select(.conclusion == "failure") | .id'); do
+              job_name=$(gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job_id" --jq '.name')
+              echo "### $job_name"
+              echo
+              echo '```text'
+              gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job_id/logs" 2>/dev/null \
+                | sed -E 's/^[0-9T:.Z-]+ //' | grep -v '^##\[' | tail -150 || echo "(log unavailable)"
+              echo '```'
+              echo
+            done
+          } > facts.md
+          wc -l facts.md
+
+      - name: Explain a skipped diagnosis
+        if: env.RUN_ID != '' && env.HAS_KEY != 'true'
+        run: |
+          echo "::notice title=Fix proposal::No agent credential is set, so the facts are the whole proposal."
+          cp facts.md proposal.md
+
+      - name: Diagnose and draft the proposal
+        id: agent
+        if: env.RUN_ID != '' && env.HAS_KEY == 'true'
+        # A revoked or exhausted credential must not hide the facts, so the run goes on
+        # with the facts alone and says why.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            A workflow failed in this repository. `facts.md` in the working directory holds what
+            is known: the failing jobs and steps, the log tail of each, and the commits and files
+            changed since the last green run. The repository at the failing commit is checked out.
+
+            Read `facts.md`, then `.claude/commands/validate.md` and the parts of `CLAUDE.md`
+            the failure touches. Read the files the suspect commits changed where that helps.
+
+            Write `proposal.md` with these sections, in plain language a reviewer can act on in
+            five minutes:
+            1. `## What failed`: the command or step, the job, and the one error line that matters.
+            2. `## Suspect commit`: the commit (or commits) most likely responsible and why; say
+               "unclear" when the facts don't single one out.
+            3. `## Diagnosis`: the cause as far as the facts show it, and what is still a guess.
+            4. `## Proposed fix`: the smallest change that would make the run green, as a diff
+               or exact steps, and the command a person runs to confirm it. When the only failure
+               is a timeout in a test file that none of the suspect commits changed, write a
+               **quarantine proposal** instead: name the test, state that it looks flaky, and say
+               that removing it from the gate is a person's decision that CLAUDE.md otherwise
+               forbids (tests are never skipped to get green).
+            5. `## A person decides`: the decision being asked for, in one sentence.
+
+            Rules: do not change any file other than creating `proposal.md`; do not run package
+            managers, builds or test suites; do not open issues or comments yourself. Keep the
+            whole file under 120 lines.
+          claude_args: |
+            --max-turns 30
+            --allowedTools "Read,Grep,Glob,Write(proposal.md),Bash(git log:*),Bash(git show:*),Bash(git diff:*)"
+
+      - name: Explain a failed diagnosis
+        if: env.RUN_ID != '' && steps.agent.outcome == 'failure'
+        run: |
+          echo "::warning title=Fix proposal::The agent could not run (check its credential in the repository secrets); the facts are the whole proposal."
+          { echo "## Diagnosis unavailable"; echo; echo "The agent step failed, most often because the credential in the repository secrets is missing or revoked. The facts below are complete; a person diagnoses from them."; } > proposal.md
+
+      - name: Keep the proposal with the facts
+        if: env.RUN_ID != ''
+        run: |
+          set -euo pipefail
+          test -s proposal.md || cp facts.md proposal.md
+          {
+            cat proposal.md
+            echo
+            echo "---"
+            echo
+            echo "<details><summary>Facts this was based on</summary>"
+            echo
+            cat facts.md
+            echo
+            echo "</details>"
+          } > issue.md
+
+      - name: Show the proposal (dry run)
+        if: env.RUN_ID != '' && env.DRY_RUN == 'true'
+        run: |
+          echo "## Fix proposal (dry run, no issue opened)" >> "$GITHUB_STEP_SUMMARY"
+          cat issue.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update the issue
+        if: env.RUN_ID != '' && env.DRY_RUN != 'true'
+        env:
+          WORKFLOW: ${{ steps.facts.outputs.workflow }}
+          BRANCH: ${{ steps.facts.outputs.branch }}
+        run: |
+          set -euo pipefail
+          title="Red on $BRANCH: $WORKFLOW failed"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label fix-proposal --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file issue.md
+            echo "::notice title=Fix proposal::Added the new diagnosis to the open issue #$existing."
+          else
+            url=$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --label needs-person --label fix-proposal --body-file issue.md)
+            echo "::notice title=Fix proposal::Opened $url for a person to decide."
+          fi

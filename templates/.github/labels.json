@@ -1,0 +1,50 @@
+[
+  {
+    "name": "fast-lane",
+    "color": "0E8A16",
+    "description": "Docs or user-visible copy only (CLAUDE.md § Fast lane)",
+    "milestone": 0
+  },
+  {
+    "name": "ready-for-agent",
+    "color": "0E8A16",
+    "description": "Fully specified, ready for an unattended agent",
+    "milestone": 0
+  },
+  {
+    "name": "roadmap",
+    "color": "5319E7",
+    "description": "A pull request that builds a roadmap milestone; the triage digest groups these",
+    "milestone": 0
+  },
+  {
+    "name": "contract",
+    "color": "1D76DB",
+    "description": "Adds or changes what a component promises; always needs sign-off",
+    "milestone": 1
+  },
+  {
+    "name": "needs-person",
+    "color": "D93F0B",
+    "description": "Automation proposed this; a named person must decide",
+    "milestone": 3
+  },
+  {
+    "name": "fix-proposal",
+    "color": "D93F0B",
+    "description": "A diagnosis and proposed fix (or quarantine proposal) for a red run; a person decides",
+    "milestone": 3
+  },
+  {
+    "name": "unreviewed-contract",
+    "color": "FBCA04",
+    "description": "Contract drafted from the code, bugs included; check against intent before signing off",
+    "milestone": 4
+  },
+  {
+    "name": "triage-proposal",
+    "color": "C5DEF5",
+    "description": "Triage suggested labels, duplicates or a pickup prompt; a person applies them",
+    "milestone": 5
+  }
+]

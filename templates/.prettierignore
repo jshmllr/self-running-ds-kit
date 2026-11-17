@@ -1,0 +1,10 @@
+# Append to your .prettierignore.
+# Third-party skills stay byte-for-byte as copied (see .claude/skills/THIRD-PARTY-NOTICES.md).
+# A formatter pass once turned a `'use client'` directive in a code example into
+# `('use client');`.
+.claude/skills/codebase-design/
+.claude/skills/diagnosing-bugs/
+.claude/skills/grilling/
+.claude/skills/tdd/
+.claude/skills/writing-for-agents/
+.claude/skills/vercel-react-best-practices/

@@ -1,0 +1,157 @@
+name: Triage proposals
+
+# Proposes, never decides. On a new issue, an agent suggests labels from the ones that exist,
+# points at likely duplicates, says whether the What / Why / If-we-don't-do-it sections are
+# missing, and drafts a pickup prompt when the issue has none. The suggestion is one comment on
+# the issue plus the `triage-proposal` label; no other label is applied and no issue is ever
+# closed. Once a week it posts a short roadmap digest on the roadmap issue.
+#
+# Trying it out: a pull request that changes this file, or a `workflow_dispatch` with `dry_run`
+# on, runs the triage over the five most recent open issues and writes the proposals to the job
+# summary instead of posting anything.
+
+on:
+  issues:
+    types: [opened, reopened]
+  schedule:
+    - cron: '0 12 * * 1'
+  pull_request:
+    paths:
+      - .github/workflows/triage-proposals.yml
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Write the proposals to the job summary instead of posting them
+        type: boolean
+        default: true
+
+permissions: {}
+
+env:
+  ROADMAP_ISSUE: {{ROADMAP_ISSUE}}
+
+jobs:
+  triage:
+    name: Propose triage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+      ISSUE_NUMBER: ${{ github.event_name == 'issues' && github.event.issue.number || '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather the facts
+        run: |
+          set -euo pipefail
+          mkdir -p triage
+          gh label list --repo "$GITHUB_REPOSITORY" --limit 100 --json name,description > triage/labels.json
+          # Titles of recent issues and pull requests, for duplicate spotting.
+          gh issue list --repo "$GITHUB_REPOSITORY" --state all --limit 150 --json number,title,state,labels > triage/recent.json
+          if [ -n "$ISSUE_NUMBER" ]; then
+            gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json number,title,body,labels,author,createdAt --jq '[.]' > triage/targets.json
+          else
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 5 --json number,title,body,labels,author,createdAt > triage/targets.json
+          fi
+          # For the digest: what moved this week.
+          since=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          gh issue list --repo "$GITHUB_REPOSITORY" --state all --limit 50 --search "created:>=$since" --json number,title,state > triage/new-issues.json
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --label roadmap --limit 50 --json number,title,isDraft,reviewDecision,updatedAt > triage/roadmap-prs.json
+          gh issue list --repo "$GITHUB_REPOSITORY" --state open --label needs-person --limit 50 --json number,title > triage/needs-person.json
+          echo "targets: $(jq length triage/targets.json)"
+
+      - name: Explain a skipped triage
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice title=Triage proposals::No agent credential is set; nothing was proposed."
+
+      - name: Draft the proposals
+        id: agent
+        if: env.HAS_KEY == 'true'
+        # A revoked or exhausted credential must not fail the run; nothing is posted and the
+        # warning says why.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            You triage issues for this repository by proposing, never deciding. The folder
+            `triage/` holds the facts as JSON: `targets.json` (the issues to triage),
+            `labels.json` (the only labels you may suggest), `recent.json` (recent issues and
+            their state, for spotting duplicates), and for the digest `new-issues.json`,
+            `roadmap-prs.json` and `needs-person.json`. Read `AGENTS.md` and the
+            "Pull Request Descriptions" section of `CLAUDE.md` for the house style of What /
+            Why / If we don't do it.
+
+            For each issue in `targets.json`, write one Markdown file
+            `triage/proposal-<number>.md` that starts with the line `## Triage proposal` and has:
+            - **Labels**: the labels from `labels.json` that fit, each with a five-word reason,
+              or "none to add".
+            - **Possible duplicates**: issue numbers from `recent.json` whose title describes
+              the same thing, each with why, or "none found". Never say an issue IS a
+              duplicate; say it may be.
+            - **Sections**: whether the body has a What, a Why and an If-we-don't-do-it, by
+              name, and which are missing.
+            - **Pickup prompt**: if the issue has no code block that reads like a prompt for an
+              agent, draft one (fenced, under 15 lines) that names the issue, what to read
+              first, the constraints that apply from AGENTS.md, and what "done" looks like.
+              Otherwise write "has one".
+            - End with the line: "A person applies labels, closes duplicates and edits the
+              issue; this is a proposal."
+
+            Also write `triage/digest.md` starting with `## Roadmap digest` and the date: issues
+            opened in the last seven days (number, title) with one line on each; open roadmap
+            pull requests (`roadmap-prs.json`) grouped as draft / ready / approved; open
+            `needs-person` issues; and a closing line "Nothing here was changed; these are
+            observations." Keep it under 60 lines.
+
+            Rules: write only files under `triage/`; do not post comments or change labels
+            yourself; do not run package managers or tests.
+          claude_args: |
+            --max-turns 20
+            --allowedTools "Read,Grep,Glob,Write(triage/*)"
+
+      - name: Explain a failed triage
+        if: steps.agent.outcome == 'failure'
+        run: echo "::warning title=Triage proposals::The agent could not run (check its credential in the repository secrets); nothing was proposed."
+
+      - name: Show the proposals (dry run)
+        if: env.DRY_RUN == 'true'
+        run: |
+          echo "## Triage proposals (dry run, nothing posted)" >> "$GITHUB_STEP_SUMMARY"
+          for f in triage/proposal-*.md; do
+            [ -f "$f" ] || continue
+            echo >> "$GITHUB_STEP_SUMMARY"
+            echo "### Issue ${f#triage/proposal-}" | sed 's/\.md$//' >> "$GITHUB_STEP_SUMMARY"
+            cat "$f" >> "$GITHUB_STEP_SUMMARY"
+          done
+          if [ -f triage/digest.md ]; then
+            echo >> "$GITHUB_STEP_SUMMARY"
+            cat triage/digest.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Post the proposal on the new issue
+        if: env.DRY_RUN != 'true' && github.event_name == 'issues'
+        run: |
+          set -euo pipefail
+          f="triage/proposal-$ISSUE_NUMBER.md"
+          if [ -f "$f" ]; then
+            gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$f"
+            gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label triage-proposal
+          fi
+
+      - name: Post the weekly digest on the roadmap issue
+        if: env.DRY_RUN != 'true' && github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          if [ -f triage/digest.md ]; then
+            gh issue comment "$ROADMAP_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file triage/digest.md
+          fi

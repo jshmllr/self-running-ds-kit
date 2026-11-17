@@ -1,0 +1,127 @@
+# Consumer usage report.
+#
+# Read-only. Shallow-clones the apps that use the design system, counts how they use it
+# (components, props, className overrides, deprecated APIs, suspected local copies) and posts
+# the Markdown as a comment on this repository's roadmap issue. It opens no issues or pull
+# requests in the consumer repositories, pushes nothing, and runs none of their code: the
+# scanner only reads their source files. A person turns its observations into requests.
+#
+# Needs a CONSUMER_READ_TOKEN secret with read access to every repository in CONSUMER_REPOS.
+# Without it the run prints a notice and succeeds. The scanner itself (tooling/usage/) is
+# stack-bound and comes from the adapter.
+
+name: Consumer usage report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * 1' # Monday 13:00 UTC
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: usage-report
+  cancel-in-progress: false
+
+env:
+  REPORT_ISSUE: '{{ROADMAP_ISSUE}}'
+  # Space-separated owner/repo list of the apps that install the package.
+  CONSUMER_REPOS: '{{CONSUMER_REPOS}}'
+
+jobs:
+  report:
+    name: Scan consumer usage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for the consumer read token
+        id: token
+        env:
+          CONSUMER_READ_TOKEN: ${{ secrets.CONSUMER_READ_TOKEN }}
+        run: |
+          if [ -z "$CONSUMER_READ_TOKEN" ]; then
+            echo "::notice::Usage report skipped: add a CONSUMER_READ_TOKEN secret with read access to the consumer repositories"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "present=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.token.outputs.present == 'true'
+
+      - name: Check for the usage scanner
+        id: scanner
+        if: steps.token.outputs.present == 'true'
+        run: |
+          if [ ! -f tooling/usage/scan.ts ]; then
+            echo "::notice::Usage report skipped: tooling/usage/scan.ts does not exist yet. Build it with the prompt in docs/milestones/5-self-managing.md of the kit."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "present=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.scanner.outputs.present == 'true'
+        with:
+          node-version: 24
+
+      # adopter: install dependencies here if the scanner needs any, for example
+      #   - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+      # A scanner that uses Node built-ins only needs no install step.
+
+      - name: Clone consumer repositories
+        if: steps.scanner.outputs.present == 'true'
+        env:
+          TOKEN: ${{ secrets.CONSUMER_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/consumers"
+          mkdir -p "$dest"
+          cloned=()
+          for full in $CONSUMER_REPOS; do
+            name="${full##*/}"
+            if git clone --quiet --depth 1 "https://x-access-token:${TOKEN}@github.com/${full}.git" "$dest/$name"; then
+              # The scan reads only source files; dropping .git also drops the token-bearing remote URL.
+              rm -rf "${dest:?}/${name:?}/.git"
+              cloned+=("$dest/$name")
+            else
+              echo "::warning::Could not clone ${full}; the report leaves it out."
+            fi
+          done
+          if [ "${#cloned[@]}" -eq 0 ]; then
+            echo "::error::No consumer repository could be cloned."
+            exit 1
+          fi
+          printf '%s\n' "${cloned[@]}" > "$RUNNER_TEMP/consumer-paths.txt"
+
+      - name: Scan
+        if: steps.scanner.outputs.present == 'true'
+        run: |
+          mapfile -t repos < "$RUNNER_TEMP/consumer-paths.txt"
+          node tooling/usage/scan.ts "${repos[@]}" --out usage-report.md > /dev/null
+          cat usage-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: steps.scanner.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: usage-report
+          path: usage-report.md
+
+      - name: Post the report
+        if: steps.scanner.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # GitHub rejects comments over 65,536 characters; a longer report links to the artifact.
+          if [ "$(wc -c < usage-report.md)" -gt 60000 ]; then
+            {
+              head -c 60000 usage-report.md
+              printf '\n\n_Truncated. The full report is the `usage-report` artifact of %s/%s/actions/runs/%s._\n' \
+                "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+            } > usage-report-comment.md
+          else
+            cp usage-report.md usage-report-comment.md
+          fi
+          gh issue comment "$REPORT_ISSUE" --body-file usage-report-comment.md

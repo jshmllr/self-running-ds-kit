@@ -1,0 +1,107 @@
+name: Contract review
+
+# A second opinion on pull requests that change a UI component: an agent reads the
+# component's contract ({{CONTRACT_HOME}}) and the change, and comments where the code or
+# the tests no longer keep a promise, or where a promise has no proof. It never approves;
+# the reviewer the branch rules require still owns correctness. The mechanical checks
+# (section order, Status value, test names) are the Contract check in the validation
+# workflow, so this review looks only for what needs judgment.
+#
+# Signs in with the repository's `CLAUDE_CODE_OAUTH_TOKEN` secret, or an `ANTHROPIC_API_KEY`
+# secret when that is set instead. With neither, the job prints a notice and passes, so a
+# missing credential never blocks a pull request.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '{{COMPONENT_DIR}}**'
+
+permissions: {}
+
+env:
+  # The model the second opinion runs on. Change it here; nothing else names it.
+  CLAUDE_MODEL: claude-opus-5-5
+
+jobs:
+  contract-review:
+    name: Contract review (second opinion)
+    # Drafts are still being written; the review runs once the author asks for eyes.
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    env:
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+
+    steps:
+      - name: Explain a skipped review
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice title=Contract review::Skipped. Add a CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY repository secret to turn the second-opinion review on."
+
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          fetch-depth: 0
+
+      - name: Review the changed contracts
+        id: agent
+        if: env.HAS_KEY == 'true'
+        # A second opinion that cannot run must not turn the pull request red.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_sticky_comment: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            BASE: origin/${{ github.event.pull_request.base.ref }}
+
+            You are the second-opinion contract reviewer for this pull request. The branch is
+            checked out. You hunt for places where a component's code and tests no longer keep
+            what its contract promises. You do not summarise the change, you do not approve, and
+            you do not request changes: a person does that.
+
+            Read first, in this order:
+            1. CLAUDE.md, the section "Component contract" (the blank form and its rules) and
+               the section "Testing".
+            2. .github/instructions/component-contract.instructions.md (the review checks).
+            3. The diff: `git diff $BASE...HEAD -- {{COMPONENT_DIR}}`. Only files under
+               {{COMPONENT_DIR}} matter, and only components that have a contract (a
+               `**Status:**` line in {{CONTRACT_HOME}}). For each such component also read its
+               test files and its docs examples.
+
+            The Contract check job already reports the mechanical problems: section order, the
+            Status value, a Proof line whose test title does not exist. Do not repeat those. Look
+            for what needs judgment:
+            - A statement of behaviour in Purpose, Parts, States, Keyboard and screen reader,
+              Tokens and motion or Wording that no Proof line covers.
+            - A Proof line whose named test would still pass if the promise stopped being true
+              (read the assertion, not just the title).
+            - Code or test changes in the diff that change what the component does while the
+              contract says the opposite or says nothing.
+            - A Visual check line that claims something no docs example shows.
+            - A pull request labelled fast-lane that changes a promise.
+            - An `Approved by` Status line left in place while the diff changes a promise.
+
+            Report only findings you are at least 80% sure of. For each, post one inline comment
+            on the exact line with the mcp__github_inline_comment__create_inline_comment tool:
+            what the contract promises, what the code or test does instead, and the one change
+            that would reconcile them. Then post one summary comment with
+            `gh pr comment` that begins "Second opinion on the contract" and lists the findings
+            in one line each, or says that the contract and the change agree. Never approve,
+            never request changes, never edit files, never run the test suites.
+          claude_args: |
+            --model ${{ env.CLAUDE_MODEL }}
+            --max-turns 40
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Read,Grep,Glob"
+
+      - name: Explain a failed review
+        if: steps.agent.outcome == 'failure'
+        run: echo "::warning title=Contract review::The agent could not run (check its credential in the repository secrets); no second opinion this time."

@@ -1,0 +1,239 @@
+# {{VALIDATION_WORKFLOW}}
+#
+# One workflow runs every check on pull requests and on merge-queue groups, and ends in a
+# single always-run job, "{{GATE_CHECK_NAME}}", which is the only check an admin marks as
+# required. Path-gated jobs are skipped when their files didn't change; a required check
+# that is skipped would block the PR forever, so the gate reports for them.
+#
+# To add the gate to an existing workflow instead of adopting this file: copy the
+# `merge_group` trigger, the paths-filter `base`/`ref` inputs, the `pr-gate` job, and the
+# `github.event_name == 'pull_request'` guard on any job that deploys or deletes a preview.
+
+name: {{VALIDATION_WORKFLOW}}
+
+on:
+  pull_request:
+    branches:
+      - {{DEFAULT_BRANCH}}
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  # A merge queue only merges once its required checks report on the queue's temporary
+  # branch, which only this trigger produces.
+  merge_group:
+    types: [checks_requested]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ------------------------------------------------------------------
+  # Decide which path-gated jobs run.
+  # ------------------------------------------------------------------
+  detect-changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.filter.outputs.components }}
+      packages: ${{ steps.filter.outputs.packages }}
+      contract: ${{ steps.filter.outputs.contract }}
+      guidance: ${{ steps.filter.outputs.guidance }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        id: filter
+        with:
+          # Pull requests are diffed through the API and these inputs are empty. A merge
+          # group has no pull-request payload; without them the action diffs against the
+          # default branch's tip, which also counts the groups queued ahead. With them it
+          # diffs only this group's own changes.
+          base: ${{ github.event.merge_group.base_sha }}
+          ref: ${{ github.event.merge_group.head_sha }}
+          filters: |
+            components:
+              - '{{COMPONENT_DIR}}**'
+              - 'package.json'
+              - '.github/workflows/**'
+            packages:
+              - 'packages/**'
+            # The Contract check reads contracts under the component folder; its own code
+            # changes rerun it too.
+            contract:
+              - '{{COMPONENT_DIR}}**'
+              - 'tooling/contract/**'
+            # The Guidance check reads these files; its own code changes rerun it too.
+            guidance:
+              - 'CLAUDE.md'
+              - 'AGENTS.md'
+              - '.github/copilot-instructions.md'
+              - '.github/instructions/**'
+              - '.claude/skills/**'
+              - '.claude/commands/*.md'
+              - '.claude/agents/*.md'
+              - 'tooling/guidance/**'
+
+  # ------------------------------------------------------------------
+  # The checks. Replace the run steps with your commands; keep the job names stable,
+  # because the gate lists them in `needs`.
+  # ------------------------------------------------------------------
+  static-checks:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+      - run: {{LINT_CMD}}
+      - run: {{TYPECHECK_CMD}}
+
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+      - run: {{BUILD_CMD}}
+      - run: {{TEST_CMD}}
+
+  validate-packages:
+    name: Validate workspace packages
+    needs: detect-changes
+    if: needs.detect-changes.outputs.packages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - run: {{PACKAGE_MANAGER}} install --frozen-lockfile
+      - run: echo "Replace with each package's own lint, typecheck, build and test commands."
+
+  # ------------------------------------------------------------------
+  # Checks that diff against the base. The base is the pull request's base commit, or the
+  # merge group's base commit; `github.base_ref` is empty inside a merge group, so a job
+  # that fetched it would fail there. Both are Node built-ins only, so nothing is installed.
+  # ------------------------------------------------------------------
+  guidance-check:
+    name: Guidance check
+    needs: detect-changes
+    if: needs.detect-changes.outputs.guidance == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24  # runs .ts files directly; needs Node 22.18 or later
+      - name: Look for the guidance check
+        id: tool
+        run: |
+          if [ -f tooling/guidance/check.ts ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Guidance check skipped: copy tooling/guidance/ from the kit (milestone 4)."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check the guidance
+        if: steps.tool.outputs.present == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node tooling/guidance/check.ts --base "$BASE_SHA"
+
+  contract-check:
+    name: Contract check
+    needs: detect-changes
+    if: needs.detect-changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24  # runs .ts files directly; needs Node 22.18 or later
+      # The contract checker reads contracts in {{CONTRACT_HOME}}, so it is written for your
+      # stack. It checks the form, the Status line and that every proof names a test that
+      # exists. Until it exists this job passes with a notice.
+      - name: Look for the contract checker
+        id: checker
+        run: |
+          if [ -f tooling/contract/check.ts ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Contract check skipped: tooling/contract/check.ts does not exist yet. Build it with the prompt in docs/milestones/2-verify.md of the kit."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check component contracts
+        if: steps.checker.outputs.present == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node tooling/contract/check.ts --base "$BASE_SHA"
+
+  # ------------------------------------------------------------------
+  # Adapter visual check goes here, path-gated on the component folder and the docs
+  # surface. It joins the gate's `needs` only after it has run clean on the default
+  # branch for a few weeks; until then it reports and does not block.
+  #
+  # visual-check:
+  #   name: Visual check
+  #   needs: detect-changes
+  #   if: needs.detect-changes.outputs.components == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps: see docs/milestones/2-verify.md (You build) and adapters/<stack>/README.md
+  # ------------------------------------------------------------------
+
+  # ------------------------------------------------------------------
+  # THE GATE: the one check to mark as required. A job skipped by its path filter
+  # passes; any result other than success fails the gate. It fails closed: a failed
+  # `detect-changes` skips the package jobs but shows up as failure here.
+  # ------------------------------------------------------------------
+  pr-gate:
+    name: {{GATE_CHECK_NAME}}
+    needs:
+      - detect-changes
+      - static-checks
+      - build-and-test
+      - validate-packages
+      - guidance-check
+      - contract-check
+    if: |
+      always() &&
+      github.event.action != 'closed' &&
+      github.event.action != 'converted_to_draft'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Check validation results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if ! echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null; then
+            echo "::error::A validation job failed or was cancelled."
+            exit 1
+          fi
+
+  # ------------------------------------------------------------------
+  # Optional preview deploy. Kept OUT of the gate on purpose: a preview outage must not
+  # block a merge, and a preview job must never run for a merge-queue group. The
+  # event-name check matters: in a merge group `github.event.pull_request.draft` is null,
+  # and in Actions expressions `null == false` is TRUE, so the draft check alone would pass.
+  # ------------------------------------------------------------------
+  deploy-preview:
+    name: Deploy preview
+    needs: [build-and-test]
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Replace with your preview deploy. Never add this job to the gate's needs."

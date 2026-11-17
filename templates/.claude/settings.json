@@ -1,0 +1,41 @@
+{
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  },
+  "permissions": {
+    "allow": [
+      "Bash({{LINT_CMD}})",
+      "Bash({{LINT_CMD}}:scope *)",
+      "Bash({{TYPECHECK_CMD}})",
+      "Bash({{BUILD_CMD}})",
+      "Bash({{TEST_CMD}} *)",
+      "Bash({{VALIDATE_CMD}} *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/load-planning-skill.js",
+            "timeout": 10,
+            "statusMessage": "Loading the planning skill"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/load-planning-skill.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

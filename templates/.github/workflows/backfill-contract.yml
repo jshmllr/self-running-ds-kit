@@ -1,0 +1,151 @@
+name: Backfill contract
+
+# Drafts the contract for one existing component that has none, from its types, docs
+# examples and tests, and opens a draft pull request labelled `unreviewed-contract`. The
+# draft describes what the code does today, bugs included, so its Status line reads
+# `Draft, not reviewed` and the engineer who signs it off checks it against intent (issues,
+# audit findings, design decisions), not against the code. Nothing merges here.
+#
+# Trying it out: a pull request that changes this file, or a `workflow_dispatch` with `dry_run`
+# on, drafts the contract and shows the diff in the job summary without pushing anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Folder of the component, for example {{SAMPLE_COMPONENT}}
+        required: true
+      dry_run:
+        description: Show the draft in the job summary instead of opening a pull request
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - .github/workflows/backfill-contract.yml
+
+permissions: {}
+
+env:
+  # The component a pull-request dry run drafts: small, built, and without a contract.
+  SAMPLE_COMPONENT: {{SAMPLE_COMPONENT}}
+
+jobs:
+  backfill:
+    name: Draft a contract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      COMPONENT: ${{ github.event_name == 'workflow_dispatch' && inputs.component || '' }}
+      DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Choose the component
+        run: |
+          set -euo pipefail
+          component="${COMPONENT:-$SAMPLE_COMPONENT}"
+          test -d "$component" || { echo "::error::$component is not a folder"; exit 1; }
+          echo "COMPONENT=$component" >> "$GITHUB_ENV"
+          echo "COMPONENT_NAME=$(basename "$component")" >> "$GITHUB_ENV"
+          # A component with a Status line already has a contract.
+          if grep -rl '\*\*Status:\*\*' "$component" >/dev/null 2>&1; then
+            echo "::notice title=Backfill contract::$component already has a contract; nothing to draft."
+            echo "SKIP=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Explain a skipped draft
+        if: env.SKIP != 'true' && env.HAS_KEY != 'true'
+        run: echo "::notice title=Backfill contract::No agent credential is set; no draft was written."
+
+      - name: Draft the contract
+        id: agent
+        if: env.SKIP != 'true' && env.HAS_KEY == 'true'
+        # A revoked or exhausted credential must not fail the run; no draft is opened and the
+        # warning says why.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            Draft the contract for the component in `${{ env.COMPONENT }}`. The contract lives
+            in {{CONTRACT_HOME}}, in the blank form that `CLAUDE.md` § Component contract
+            defines; read that section first, then
+            `.github/instructions/component-contract.instructions.md`, then the worked example
+            `{{FIRST_CONTRACT_PATH}}` if it has a `**Status:**` line.
+
+            Then read everything in the component's folder: its types, the component, its
+            logic, its tests and its docs examples. Write what the code does TODAY, bugs
+            included; do not improve, guess or promise anything the code does not do.
+
+            Rules for the draft:
+            - Put the contract on the symbol consumers import. If a description already exists
+              there, fold its summary and usage examples into the new one; keep every example.
+            - Status line: `**Status:** Draft, not reviewed`. Never anything else.
+            - Every Proof line names exactly one existing test title (from the folder's test
+              files, verbatim) or one docs example that runs an interaction. Do not invent
+              tests. A behaviour with no test goes in the one "Visual check only" line if a
+              person can see it in a docs example, or is left out.
+            - Label every part with one of the four kinds. List disabled, read-only and hidden
+              as not applicable when the component has no such state.
+            - Where behaviour depends on something unsettled, start the line with `Open:` and
+              say what is undecided in plain words, with no issue or PR numbers.
+            - If the docs examples carry a component description of their own, move its text
+              into the contract and remove it from the examples.
+            - Change nothing else in the repository.
+
+            When done, run `node tooling/contract/check.ts ${{ env.COMPONENT }}` if that file
+            exists and fix what it reports until it prints no errors.
+          claude_args: |
+            --max-turns 40
+            --allowedTools "Read,Grep,Glob,Edit,Bash(node tooling/contract/check.ts:*),Bash(git diff:*)"
+
+      - name: Explain a failed draft
+        if: steps.agent.outcome == 'failure'
+        run: echo "::warning title=Backfill contract::The agent could not run (check its credential in the repository secrets); no draft was written."
+
+      - name: Show the draft (dry run)
+        if: env.SKIP != 'true' && env.DRY_RUN == 'true'
+        run: |
+          {
+            echo "## Backfill contract (dry run, nothing pushed): $COMPONENT_NAME"
+            echo
+            echo '```diff'
+            git diff -- "$COMPONENT" | head -400
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          git diff --stat -- "$COMPONENT"
+
+      - name: Open the draft pull request
+        if: env.SKIP != 'true' && env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- "$COMPONENT"; then
+            echo "::notice title=Backfill contract::The agent made no change; nothing to open."
+            exit 0
+          fi
+          branch="backfill/${COMPONENT_NAME,,}-contract"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -- "$COMPONENT"
+          git commit -m "docs($COMPONENT_NAME): draft the contract from today's behaviour" \
+            -m "The draft describes what the code does now, bugs included, and stays Draft, not reviewed until an engineer checks it against intent."
+          git push -u origin "$branch"
+          # {{COMPONENT_NAME}} in the body template is filled here, at run time, by this sed.
+          # It is the one placeholder in the kit that adopters leave in place.
+          sed "s/{{COMPONENT_NAME}}/$COMPONENT_NAME/g" .github/templates/backfill-contract-pr.md > pr-body.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --draft --base "$GITHUB_REF_NAME" \
+            --label unreviewed-contract \
+            --title "Draft contract for $COMPONENT_NAME (describes today's behaviour)" \
+            --body-file pr-body.md

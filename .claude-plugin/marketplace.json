@@ -1,0 +1,32 @@
+{
+  "name": "self-running-ds-kit",
+  "owner": {
+    "name": "Josh Miller",
+    "url": "https://github.com/jshmllr"
+  },
+  "metadata": {
+    "description": "Marketplace for the Self-Running Design System Kit plugin.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "self-running-ds-kit",
+      "source": "./",
+      "description": "A contract-anchored, self-running workflow for a design system: required gate, fast lane, shared agent toolkit, component contracts, and the helpers for the self-healing, self-learning and self-managing loops. People decide, helpers suggest.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Josh Miller",
+        "url": "https://github.com/jshmllr"
+      },
+      "license": "CC-BY-SA-4.0",
+      "keywords": [
+        "design-system",
+        "component-library",
+        "workflow",
+        "contracts",
+        "merge-queue",
+        "agents"
+      ]
+    }
+  ]
+}

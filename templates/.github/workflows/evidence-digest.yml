@@ -1,0 +1,191 @@
+name: Evidence digest
+
+# Proposes, never decides. The self-learning loop for the guidance:
+#
+#   1. Evidence: once a week, collect what bot reviewers said on the pull requests merged in
+#      the last seven days, and group it by file and by the rule or CLAUDE.md section each
+#      comment cites. This part is deterministic (gh, jq and tooling/evidence).
+#   2. Proposals: when an agent credential is set, an agent reads that summary against the
+#      guidance and drafts at most five rule changes, each with the evidence behind it.
+#   3. A person accepts: an accepted proposal lands by editing the guidance in a normal pull
+#      request, where the Guidance check holds it to the same rules as any other change.
+#
+# The workflow never edits files and never opens pull requests. Its only write is one comment
+# on the roadmap issue.
+#
+# Trying it out: a pull request that changes this workflow or tooling/evidence, or a
+# `workflow_dispatch` with `dry_run` on, writes the digest to the job summary instead of
+# posting it.
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+  pull_request:
+    paths:
+      - .github/workflows/evidence-digest.yml
+      - tooling/evidence/**
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Write the digest to the job summary instead of posting it
+        type: boolean
+        default: true
+
+permissions: {}
+
+env:
+  ROADMAP_ISSUE: {{ROADMAP_ISSUE}}
+
+jobs:
+  digest:
+    name: Evidence digest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Gather bot review comments
+        id: gather
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          since=$(date -u -d '7 days ago' +%F)
+          until=$(date -u +%F)
+          gh pr list --repo "$GITHUB_REPOSITORY" --state merged --search "merged:>=$since" \
+            --limit 200 --json number,title,files > evidence/prs.json
+
+          # One JSON object per comment: inline review comments and review summaries from bots,
+          # plus any "Second opinion on the contract" summary comment, whoever posted it.
+          is_bot='(.user.type == "Bot") or (.user.login | endswith("[bot]"))'
+          : > evidence/raw.json
+          for n in $(jq -r '.[].number' evidence/prs.json); do
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$n/comments" --jq "
+              .[] | select($is_bot)
+              | {pr: $n, kind: \"review-comment\", author: .user.login, path, url: .html_url, body}" >> evidence/raw.json
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$n/reviews" --jq "
+              .[] | select(($is_bot) and ((.body // \"\") != \"\"))
+              | {pr: $n, kind: \"review\", author: .user.login, path: null, url: .html_url, body}" >> evidence/raw.json
+            gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$n/comments" --jq "
+              .[] | select((.body // \"\") | contains(\"Second opinion on the contract\"))
+              | {pr: $n, kind: \"summary\", author: .user.login, path: null, url: .html_url, body}" >> evidence/raw.json
+          done
+
+          jq -n --arg since "$since" --arg until "$until" \
+            --slurpfile prs evidence/prs.json --slurpfile comments evidence/raw.json '{
+              since: $since,
+              until: $until,
+              pullRequests: ($prs[0] | map({number, title, files: [.files[]?.path]})),
+              comments: $comments
+            }' > evidence/comments.json
+          node tooling/evidence/summarize.ts evidence/comments.json evidence/summary.md
+          cat evidence/summary.md
+          echo "comments=$(jq '.comments | length' evidence/comments.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Explain skipped proposals
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice title=Evidence digest::No agent credential is set; the digest carries the summary without proposals."
+
+      - name: Draft guidance proposals
+        id: agent
+        if: env.HAS_KEY == 'true' && steps.gather.outputs.comments != '0'
+        # A revoked or exhausted credential must not fail the run; the digest goes out without
+        # proposals and the warning says why.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            You propose changes to this repository's guidance from review evidence. You never
+            make them: a person decides, and an accepted proposal lands through a normal pull
+            request.
+
+            Read first:
+            1. `evidence/summary.md`: what bot reviewers said on last week's merged pull
+               requests, grouped by file and by cited rule or CLAUDE.md section, with excerpts.
+               `evidence/comments.json` has the full comment bodies if you need them.
+            2. `CLAUDE.md`, the section "Changing the guidance": a rule needs a Source line
+               verified against the default branch, each rule has one home, and automation
+               only collects and proposes.
+            3. The guidance files the evidence points at: `CLAUDE.md`, `AGENTS.md`,
+               `.claude/skills/product-design/` (SKILL.md, references/, decisions/), and
+               `.github/copilot-instructions.md`.
+
+            Look for patterns, not single comments: the same kind of finding on two or more
+            pull requests or files, a rule that reviewers keep citing because it is unclear, a
+            finding that no rule covers, or a rule nobody needed.
+
+            Write `evidence/proposals.md`. Start it with the line `## Guidance proposals`, then
+            at most five proposals, strongest first. Each proposal has:
+            - **Pattern**: what was seen, how many comments, and where (pull request numbers
+              and files).
+            - **Rule**: the existing rule it points at (its `rule/…` id or `CLAUDE.md § …`
+              section) or "missing rule".
+            - **Change**: the exact wording to add, replace or delete, and the one file it
+              belongs in. Respect one home per rule: if the rule already lives somewhere,
+              change it there instead of adding a copy.
+            - **Source**: the `Source:` line the change would carry, naming the pull requests
+              or comments it rests on.
+            If no pattern holds up, write a single line saying so instead of proposals. Close
+            with the line: "A person decides whether any of these land; nothing was changed."
+
+            Rules: write only `evidence/proposals.md`; do not edit any other file, post
+            comments, or open pull requests; do not run package managers or tests.
+          claude_args: |
+            --max-turns 20
+            --allowedTools "Read,Grep,Glob,Write(evidence/*)"
+
+      - name: Explain missing proposals
+        if: steps.agent.outcome == 'failure'
+        run: |
+          rm -f evidence/proposals.md
+          echo "::warning title=Evidence digest::The agent could not run (check its credential in the repository secrets); the digest goes out without proposals."
+
+      - name: Assemble the digest
+        run: |
+          set -euo pipefail
+          {
+            echo "## Evidence digest"
+            echo
+            jq -r '"Bot review comments on pull requests merged \(.since) to \(.until). Proposals are proposals, never edits."' evidence/comments.json
+            echo
+            # The digest heading replaces the summary's title; its sections nest one level down.
+            tail -n +2 evidence/summary.md | sed 's/^## /### /'
+            if [ -f evidence/proposals.md ]; then
+              echo
+              cat evidence/proposals.md
+            fi
+          } > evidence/digest.md
+
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence
+          path: evidence/
+          retention-days: 30
+
+      - name: Show the digest (dry run)
+        if: env.DRY_RUN == 'true'
+        run: |
+          echo "> Dry run: nothing was posted." >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          cat evidence/digest.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post the digest on the roadmap issue
+        if: env.DRY_RUN != 'true'
+        run: gh issue comment "$ROADMAP_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file evidence/digest.md
