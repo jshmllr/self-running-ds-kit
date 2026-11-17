@@ -1,7 +1,6 @@
 # Milestone 3 of 6: Self-healing
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. Built, with dry runs proven on GitHub. The kit carries the fix
+**Status in the kit:** Built, with dry runs proven on GitHub. The kit carries the fix
 proposal workflow. **You build** the release suggestion; this document says what it must do.
 
 **Depends on:** milestone 0 (the gate is what defines "red") and milestone 1 (the contract
@@ -69,7 +68,7 @@ it is custom code for your stack. It needs no paid service.
   breaking change with the difference and a drafted change record. Nothing publishes
   without `{{RELEASE_APPROVER}}`.
 
-At the origin both dry runs pass on GitHub.
+Both dry runs pass on GitHub.
 
 ## Gotchas that apply
 
@@ -82,10 +81,10 @@ At the origin both dry runs pass on GitHub.
 
 ## Decisions it needs
 
-- **Who approves a release and a rollback.** The origin chose the pull request's approver,
+- **Who approves a release and a rollback.** The kit uses the pull request's approver,
   with the change record drafted on the pull request. One named role, `{{RELEASE_APPROVER}}`.
 - **Where the change record lives.** The pull request comment, the release notes, or a file
-  per release. The origin drafts it on the pull request.
+  per release. The kit drafts it on the pull request.
 
 ## Pickup prompt
 

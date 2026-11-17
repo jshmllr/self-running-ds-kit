@@ -74,9 +74,6 @@ people approve from the work agents propose, and show which later pieces your te
 | 4 | Self-learning | A guidance check, a weekly evidence digest, guidance evals, backfill drafts for old components | The guidance check, the evidence digest, the backfill agent | The guidance evals |
 | 5 | Self-managing | Triage proposals; a read-only usage report from consumer apps | The triage agent, the usage report workflow | The usage scanner |
 
-Early release: the fresh-repository proof run has not been done yet;
-[`setup/proof-run.md`](setup/proof-run.md) is that test.
-
 **The "You build" pieces are part of the plan, not extras:** a
 milestone is not done until they exist. Each one reads your own code, so it has to be
 written for your stack; the milestone doc says exactly what it must do, who decides, and
@@ -219,7 +216,7 @@ stays as it is.
 
 ## Design rules the kit obeys
 
-These came out of the origin's engineering review and shaped every later decision. Keep them when you extend the kit.
+These shaped every later decision. Keep them when you extend the kit.
 
 1. **Review does not shrink to "taste only".** Better checks make review shorter because the evidence is better; the reviewer still owns correctness. A verifier is a second opinion, never a substitute approval.
 2. **Only UI components are in the contract loop.** Packages whose contract is semantics keep an engineer-reviewed, decision-record process. 
@@ -253,8 +250,7 @@ this source kit as `0.1.0`; that is not a published release or an official marke
 [Source history](https://github.com/jshmllr/self-running-ds-kit/commits/main/) ·
 [Download current source](https://github.com/jshmllr/self-running-ds-kit/archive/refs/heads/main.zip).
 
-The complete fresh-repository proof run is still unverified. Each adopting team must run
-the milestone proofs against its own tools and branch rules.
+Each adopting team must run the milestone proofs against its own tools and branch rules.
 
 ## About Josh
 

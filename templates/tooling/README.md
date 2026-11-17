@@ -11,7 +11,7 @@ into your repository as `tooling/guidance/` and `tooling/evidence/`.
 
 ## Requirements
 
-- **Node 22.18 or later, or Node 24** (the origin runs 24). The files import each other with
+- **Node 22.18 or later, or Node 24.** The files import each other with
   `.ts` extensions and run with no compile step, which needs Node's type stripping.
 - `"type": "module"` in `package.json`.
 - A `tsconfig.json` with `allowImportingTsExtensions: true`, `module` and `moduleResolution`
@@ -105,6 +105,6 @@ request, where the Guidance check applies to it like any other change.
 npx vitest run tooling/guidance tooling/evidence
 ```
 
-Every test from the origin is kept; three fixture strings were reworded (an attribution to
+Every test is kept; three fixture strings were reworded (an attribution to
 an upstream author became `example-org/skills`, and two em dashes became commas), with no
 change to what is asserted.

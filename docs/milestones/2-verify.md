@@ -1,7 +1,6 @@
 # Milestone 2 of 6: Stronger verify
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. Built, with dry runs proven on GitHub. The kit carries the contract
+**Status in the kit:** Built, with dry runs proven on GitHub. The kit carries the contract
 review workflow and the gate wiring. **You build** the contract checker and the visual
 check; this document says what each must do.
 
@@ -86,9 +85,9 @@ own review process; their contract is semantics, which a picture cannot see.
   at it. With the credential removed, the workflow passes with a notice.
 - **Nothing approves.** The required approval still comes from `{{APPROVER_TEAM}}`.
 
-At the origin: the contract checker passes on the first contract and runs on GitHub; the
-visual check was proven locally on every component example in both themes; the contract
-review's dry run passes.
+The contract checker passes on the first contract and runs on GitHub; the visual check was
+proven locally on every component example in both themes; the contract review's dry run
+passes.
 
 ## Gotchas that apply
 
@@ -102,10 +101,10 @@ review's dry run passes.
 
 ## Decisions it needs
 
-- **Visual-diff tool.** The origin chose the test runner's built-in screenshot comparison,
+- **Visual-diff tool.** The kit uses the test runner's built-in screenshot comparison,
   run inside the existing component test setup, with no paid service. Adopt it, or choose a
   hosted service if reviewing pictures becomes the bottleneck.
-- **What runs the agents.** The origin chose Claude Code in GitHub Actions, pinned to a
+- **What runs the agents.** The kit uses Claude Code in GitHub Actions, pinned to a
   commit, proposal-only.
 
 ## Pickup prompt

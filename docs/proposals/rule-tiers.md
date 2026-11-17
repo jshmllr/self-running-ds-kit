@@ -1,6 +1,6 @@
 # Proposal: give each rule a tier and a check
 
-**Proposal. Not adopted at the origin system.** Included because milestones 2 to 4 need a
+**Proposal. Not adopted.** Included because milestones 2 to 4 need a
 way to say which rules can block a merge, which checks them, and how a waived rule
 becomes evidence. Adopt it as a decision record in the product-design skill, with a human
 accepting it, before any job depends on it.

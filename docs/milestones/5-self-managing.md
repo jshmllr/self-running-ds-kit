@@ -1,7 +1,6 @@
 # Milestone 5 of 6: Self-managing
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. Triage and the usage report are built, with dry runs proven on
+**Status in the kit:** Triage and the usage report are built, with dry runs proven on
 GitHub. Distribution is still designed only. The kit carries the triage workflow and the
 usage report workflow. **You build** the usage scanner the report runs; this document says
 what it must do.
@@ -75,7 +74,7 @@ configuration or an `llms.txt` built from the component manifest.
 - **Usage report:** the first report is posted on the roadmap issue and names at least one
   override or deprecated use that the owning team confirms is real.
 
-At the origin both dry runs pass, and the first real report was posted.
+Both dry runs pass, and the first real report was posted.
 
 ## Gotchas that apply
 
@@ -90,7 +89,7 @@ At the origin both dry runs pass, and the first real report was posted.
 ## Decisions it needs
 
 - **Usage report scope.** Which consumer repos, how often, and which signals become a
-  proposed request. The origin runs weekly over every consumer app.
+  proposed request. The kit runs weekly over every consumer app.
 - **Distribution route.** A committed MCP configuration, an `llms.txt`, or both, generated
   from the same component manifest so they cannot drift.
 

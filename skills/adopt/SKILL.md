@@ -18,7 +18,7 @@ the gate.
 
 ## Step 2: ask the decisions and the placeholders, in one round
 
-Present `setup/ADOPT.md` § 1 (decisions) with the origin's answer as the recommendation,
+Present `setup/ADOPT.md` § 1 (decisions) with the recommended answer,
 and § 2 (only the placeholders the current milestone uses) with an example each; apply
 § Small-team defaults where they fit. Fill defaults you can read from the repo (package
 name, default branch, Node version, setup and install commands, the four commands from the

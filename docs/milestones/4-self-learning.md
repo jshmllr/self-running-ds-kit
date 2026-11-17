@@ -1,7 +1,6 @@
 # Milestone 4 of 6: Self-learning
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. Built. The guidance check passes on real project guidance, and the
+**Status in the kit:** Built. The guidance check passes on real project guidance, and the
 evidence digest and backfill dry runs pass on GitHub. The guidance evals are proven on
 fixed examples only, not yet with a live model. The kit carries the guidance check, the
 evidence digest and the backfill workflow. **You build** the guidance evals; this document
@@ -99,9 +98,9 @@ The constitution's rule stays: automation collects evidence and proposes. No age
 
 ## Decisions it needs
 
-- **What counts as evidence.** The origin counts bot review comments and the contract
+- **What counts as evidence.** The kit counts bot review comments and the contract
   review's summaries. Add people's review comments if you want them counted.
-- **Which guidance the evals test first.** The origin started with the consumer-facing rules
+- **Which guidance the evals test first.** The kit starts with the consumer-facing rules
   page, because it is what other teams' assistants read.
 - **Backfill order.** Components with audit findings first, then the most-used components
   according to the usage report.

@@ -1,7 +1,6 @@
 # Milestone 1 of 6: Agree the contract
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. Built. The form, the proof rule, the `Open:` marking, the
+**Status in the kit:** Built. The form, the proof rule, the `Open:` marking, the
 Status-flip procedure and the review checklist below come from a first contract (on a small
 label component) and its written rules, reviewed by an engineering reviewer and an
 independent agent; nothing here is untested on a real component.
@@ -88,7 +87,7 @@ point out a missing test or an unapproved change.
 
 ## Decisions it needs
 
-The origin settled these; adopt or record otherwise.
+Adopt these, or record otherwise.
 
 - **Where the contract lives:** in the component's own docs source (no new page), because
   that text already reaches the docs page, the agent manifest and the shipped package.

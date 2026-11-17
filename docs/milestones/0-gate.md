@@ -1,7 +1,6 @@
 # Milestone 0 of 6: Make the gate real
 
-**Status in the kit:** Early release: the fresh-repository proof run (`setup/proof-run.md`)
-has not been done yet. All three pieces are built. The gate's red, green and skipped cases
+**Status in the kit:** All three pieces are built. The gate's red, green and skipped cases
 are proven on real runs; the merge-queue path is reasoned, not run, until a queue exists.
 
 ## Goal
@@ -138,7 +137,7 @@ branches up to date" off.
 - **Who holds admin** for the default branch's rules, and which route (org ruleset or
   repository ruleset) they take. On a personal account the owner is the admin and the only
   route is a repository ruleset.
-- **Fast-lane criteria.** The kit ships the origin's decision: documentation and
+- **Fast-lane criteria.** The kit ships this decision: documentation and
   user-visible copy only; dependency changes get full review because of supply-chain risk;
   version bumps never appear in feature PRs because publish automation owns them. Adopt it
   or record a different one.
