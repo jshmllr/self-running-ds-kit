@@ -5,7 +5,8 @@ adopting repository lists the folders it copies in `.prettierignore`, so formatt
 rewrites them. To take an upstream change, copy the skill again from its source and update
 its row; fix a bug in their content upstream, so the next copy keeps the fix. The one
 omission: `vercel-react-best-practices` leaves out upstream's `README.md`, which documents
-that repository's build tooling.
+that repository's build tooling. Your team's own skills don't belong here; see
+`setup/ADOPT.md` § Your existing skills.
 
 | Skill                                                              | Source                                                                                                 | Copied at                            |
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------ |

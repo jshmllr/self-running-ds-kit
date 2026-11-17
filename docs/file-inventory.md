@@ -9,37 +9,33 @@ written and how an adopting team treats it.
 | **Local**: same idea, local details     | The idea is fixed; names, paths and commands are placeholders | Fill the placeholders                         |
 | **Adapter**: depends on tooling         | One stack shipped first; the kit says what another stack swaps | Pick an adapter or write one                  |
 
-Status describes the system the kit came from: **Built** means it exists there; **Proven**
-means a named check or run passed there. Neither means this packaged kit has passed in a
-fresh repository yet; `setup/proof-run.md` is that test.
-
 ## Core
 
-| Kit file                                                          | Milestone | Status  |
-| ----------------------------------------------------------------- | --------- | ------- |
-| `templates/CLAUDE.md` § Component contract                        | 1         | Built   |
-| `templates/CLAUDE.md` § Fast lane                                 | 0         | Built   |
-| `templates/CLAUDE.md` § Validation                                | 0         | Proven  |
-| `templates/CLAUDE.md` § Test Contract Quality                     | 0         | Proven  |
-| `templates/CLAUDE.md` § Pull Request Descriptions (incl. In plain words) | 0  | Proven  |
-| `templates/CLAUDE.md` § Code Comments                             | 0         | Proven  |
-| `templates/CLAUDE.md` § Code Review Checklist (post results)      | 0         | Built   |
-| `templates/CLAUDE.md` § Working Plans, § Changing the guidance    | 0         | Proven  |
-| `templates/AGENTS.md` routing table shape and "one home per rule" | 0         | Proven  |
-| `templates/.github/pull_request_template.md`                      | 0         | Built   |
-| `templates/.github/instructions/component-contract.instructions.md` | 1       | Built   |
-| `templates/.github/labels.json` (`fast-lane`, `contract`, `needs-person`, …) | 0 to 5 | Built |
-| `templates/.claude/skills/product-design/` (skill shape, rule format, decision authority, gaps file, decision template, exemplar format) | 0 | Proven |
-| `skills/grilling`, `tdd`, `diagnosing-bugs`, `codebase-design`, `writing-for-agents` (vendored) | 0 | Built |
-| `skills/review-triage`                                            | 0         | Built   |
-| `skills/contract-review`                                          | 1         | New in the kit |
-| `skills/adopt`                                                    | setup     | New in the kit |
-| `docs/architecture.md`, `docs/gotchas.md`, `docs/milestones/*`    | all       | Built; 2 to 5 include pieces you build |
-| `templates/docs/automation-map.md` (shape: loop, every piece, what never happens, data, switching off, assumptions) | all | Built |
-| `templates/tooling/guidance/` (guidance check) and its tests       | 4         | Built   |
-| `templates/tooling/evidence/` (evidence digest) and its tests      | 4         | Built   |
-| `docs/proposals/rule-tiers.md`                                    | 2 to 4    | Proposal, not adopted |
-| `THIRD-PARTY-NOTICES.md`                                          | 0         | Built   |
+| Kit file | Section or contents |
+| --- | --- |
+| `templates/CLAUDE.md` | Component contract |
+| `templates/CLAUDE.md` | Fast lane |
+| `templates/CLAUDE.md` | Validation |
+| `templates/CLAUDE.md` | Test Contract Quality |
+| `templates/CLAUDE.md` | Pull Request Descriptions (incl. In plain words) |
+| `templates/CLAUDE.md` | Code Comments |
+| `templates/CLAUDE.md` | Code Review Checklist (post results) |
+| `templates/CLAUDE.md` | Working Plans; Changing the guidance |
+| `templates/AGENTS.md` | Routing table shape and "one home per rule" |
+| `templates/.github/pull_request_template.md` | Whole file |
+| `templates/.github/instructions/component-contract.instructions.md` | Whole file |
+| `templates/.github/labels.json` | `fast-lane`, `contract`, `needs-person`, … |
+| `templates/.claude/skills/product-design/` | Skill shape, rule format, decision authority, gaps file, decision template, exemplar format |
+| `skills/grilling`, `skills/tdd`, `skills/diagnosing-bugs`, `skills/codebase-design`, `skills/writing-for-agents` | Vendored toolkit skills (see `THIRD-PARTY-NOTICES.md`) |
+| `skills/review-triage` | Toolkit skill |
+| `skills/contract-review` | Toolkit skill |
+| `skills/adopt` | Setup skill |
+| `docs/architecture.md`, `docs/gotchas.md`, `docs/milestones/*` | Whole files; milestones 2 to 5 include pieces you build |
+| `templates/docs/automation-map.md` | Shape: loop, every piece, what never happens, data, switching off, assumptions |
+| `templates/tooling/guidance/` | Guidance check and its tests |
+| `templates/tooling/evidence/` | Evidence digest and its tests |
+| `docs/proposals/rule-tiers.md` | Proposal, not adopted |
+| `THIRD-PARTY-NOTICES.md` | Whole file |
 
 ## Local
 

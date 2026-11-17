@@ -42,17 +42,9 @@ people approve from the work agents propose, and show which later pieces your te
 
 [![Overview of the component-change journey, later helper loops, and adoption starting points](docs/images/kit-workflow-overview.png)](docs/images/kit-workflow-overview.png)
 
-<details>
-<summary>Who does what: people, agents and scripts</summary>
+### Who does what: people, agents and scripts
 
 [![Swimlanes showing people approving, agents proposing, and scripts checking and publishing](docs/images/kit-workflow-roles.png)](docs/images/kit-workflow-roles.png)
-
-</details>
-
-Editable Paper sources: [overview](https://app.paper.design/file/01M2N5F96XSXQAQZSXB9V0ARZ0/p-N-1/K98-1)
-and [roles and responsibilities](https://app.paper.design/file/01M2N5F96XSXQAQZSXB9V0ARZ0/p-N-1/KFK-1).
-Open either image for the full-size version. The pictures explain the process; the milestone
-docs define its requirements and proofs.
 
 ## The six milestones
 

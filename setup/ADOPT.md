@@ -163,6 +163,26 @@ Open these as separate PRs, in this order: toolkit, fast lane, gate, then (miles
 first contract, then rules. Each PR description: What / Why / If we don't do it / In plain
 words.
 
+### Your existing skills
+
+If your team already keeps skills in `.claude/skills/`, merge the toolkit into them; don't
+copy over them.
+
+- **Check names first.** `cp skills/*` overwrites any folder with the same name. List
+  both sets before copying, and for each clash the policy owner keeps one: yours or the
+  kit's. Rename only if both are genuinely needed.
+- **Your skill can replace a kit skill.** The vendored skills (`grilling`, `tdd`,
+  `diagnosing-bugs`, `codebase-design`, `writing-for-agents`) are not wired to anything;
+  skip any you already cover. `review-triage` is named in `CLAUDE.md` § Code Review
+  Checklist, so update that line if yours replaces it. `product-design` is linked from
+  `AGENTS.md`, `CLAUDE.md`, `copilot-instructions.md` and the evidence digest: keep the
+  path, or change every link in the same PR.
+- **Keep in-house skills out of `THIRD-PARTY-NOTICES.md`.** That file lists only skills
+  copied from another repository. The guidance check skips `Source:` and duplicate warnings
+  for those, so listing your own skills there switches off checks you want.
+- **Personal skills stay personal.** Anything only one person uses belongs at user level
+  (`~/.claude/skills/`), not in the repository toolkit.
+
 ### CI setup before enabling the gate
 
 Each gate job starts on a fresh runner, so it sets up Node, the package manager and the
