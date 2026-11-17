@@ -63,7 +63,9 @@ point out a missing test or an unapproved change.
    section, stack the rules PR on the fast-lane PR. Point the "worked example" line at the
    first contract.
 7. Replace `{{FIRST_CONTRACT_PATH}}` in `CLAUDE.md` with the contract's path, then run
-   `scripts/fill-placeholders.sh --check` on the files you placed; it must report nothing.
+   the scoped `scripts/fill-placeholders.sh --check` example in `setup/ADOPT.md` § 2
+   on the adopted configuration files only. Exclude copied toolkit instructions and
+   unrelated examples; it must report no unresolved configuration placeholders.
    Record the two choices below as decisions with a `Source:` line. Working alone: see
    `setup/ADOPT.md` § Small-team defaults.
 

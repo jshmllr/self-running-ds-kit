@@ -31,8 +31,9 @@ Milestones 0 and 1 are a good place to pause: a real gate, shared guidance and o
 contract. Install each later piece with its milestone.
 
 - **`ORG`**: your username on a personal account.
-- **`APPROVER_TEAM`**: the reviewer's team or handle, or `none`. With `none`, delete
-  `.github/CODEOWNERS` and reword "the approver team" in the adopted guidance.
+- **`APPROVER_TEAM`**: the reviewer's team or handle, or `none`. With `none`, omit the kit's
+  CODEOWNERS entry and reword "the approver team" in the adopted guidance. Preserve any
+  existing ownership file and its rules; remove only the unused template from the scratch copy.
 - **Working alone.** GitHub will not let you approve your own PR, so your first contract
   stays `Draft, not reviewed` and milestone 1's approval proofs are recorded as not
   reached. Everything else in milestones 0 and 1 can be proven.
@@ -73,10 +74,18 @@ script fails if any placeholder is left, except `FIRST_CONTRACT_PATH`, which
 `{{FIRST_CONTRACT_PATH}}` in your `CLAUDE.md` with its path and confirm nothing is left:
 
 ```bash
-sh ../self-running-ds-kit/scripts/fill-placeholders.sh --check CLAUDE.md AGENTS.md .github .claude docs
+sh ../self-running-ds-kit/scripts/fill-placeholders.sh --check \
+  CLAUDE.md AGENTS.md .github/workflows/pr-gate.yml \
+  .claude/settings.json .claude/commands/validate.md \
+  .claude/hooks/load-planning-skill.js .claude/skills/product-design/SKILL.md \
+  docs/automation-map.md
 ```
 
-`--check` only reports; it edits nothing.
+`--check` only reports; it edits nothing. Pass the exact configuration files you adopted,
+not entire repository or skill directories. Omit paths you did not install; add the selected
+ruleset, CODEOWNERS (if adopted), and any adopted review instructions to the list. Copied
+toolkit skills and other instructional examples are not configuration to fill. In an
+existing project, check the merged files you changed rather than unrelated guidance.
 
 | Placeholder                | Meaning                                                   | Example                     |
 | -------------------------- | --------------------------------------------------------- | --------------------------- |
@@ -140,7 +149,7 @@ Then, per file:
 | `AGENTS.md`                                                  | Fill the hard stops from your stack adapter. Keep the routing table pointing at one home per rule. |
 | `.github/workflows/pr-gate.yml`                              | Replace the run steps with your commands, or copy the four gate pieces into your existing workflow. |
 | `.github/rulesets/`                                          | Keep one file: `default-branch-gate-and-queue.json` for an organisation, `default-branch-gate-only.json` for a personal account. Delete the other. |
-| `.github/CODEOWNERS`                                         | Organisation route, or a personal account with a named approver. Put the kit's line first in an existing file. Delete it if `APPROVER_TEAM` is `none`. |
+| `.github/CODEOWNERS`                                         | Organisation route, or a personal account with a named approver. Put the kit's line first in an existing file, then verify the effective owners: later matching entries override it. With `APPROVER_TEAM=none`, omit only the kit entry; preserve existing ownership rules. |
 | `.github/pull_request_template.md`, `copilot-instructions.md`, `instructions/` | As they are; adjust `applyTo` globs to your file types.                    |
 | `.claude/settings.json`, `.claude/hooks/`, `.claude/commands/validate.md` | Fill commands; write the Workspace ownership section of `validate.md`.       |
 | `.claude/skills/product-design/`                             | Start with one surface you have evidence for; list every gap honestly.                        |

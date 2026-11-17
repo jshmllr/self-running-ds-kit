@@ -54,9 +54,10 @@ red, skipped) and paste the run links into the PR. Hand the admin steps to the p
 After the person confirms the gate is required, follow `docs/milestones/1-contract.md`
 § Repo steps: one small component, verify the three surfaces, write the contract, open the
 contract PR, then the rules PR. Use the `contract-review` skill to check your own contract
-before opening the PR. Then replace `{{FIRST_CONTRACT_PATH}}` in `CLAUDE.md` with the
-contract's path and run `scripts/fill-placeholders.sh --check` on the files you placed; it
-must report nothing.
+before opening the PR. Then fill the deferred `FIRST_CONTRACT_PATH` placeholder in `CLAUDE.md` with the
+contract's path. Follow the scoped `--check` example in setup/ADOPT.md § 2: check only the
+adopted configuration files, not copied toolkit instructions or unrelated project files.
+It must report no unresolved configuration placeholders.
 
 ## Completion
 

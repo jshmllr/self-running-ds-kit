@@ -2,5 +2,6 @@
 # "Require review from Code Owners", so this line is what names the team.
 # Merging into an existing CODEOWNERS: put this line first. The last matching
 # line wins, so your more specific lines below it keep working.
-# Delete this file if APPROVER_TEAM is "none".
+# If APPROVER_TEAM is "none", omit this kit entry. Remove an unused scratch
+# template, never an existing ownership file or its rules. Verify effective owners.
 * @{{APPROVER_TEAM}}
