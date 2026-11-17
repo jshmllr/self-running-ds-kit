@@ -7,7 +7,7 @@ names what proves it worked. Work milestone by milestone; milestone 0 before any
 The `adopt` skill (`skills/adopt/SKILL.md`) walks an agent through this file, asks the
 placeholder questions, and fills the templates.
 
-Check `README.md` § Prerequisites first: a personal or organisation-owned repository, one
+Check `README.md` § Workflow requirements first: a personal or organisation-owned repository, one
 admin, GitHub Actions, Claude Code (or another agent that reads `SKILL.md` files), Node.js, `gh`.
 
 ## Starting checklist

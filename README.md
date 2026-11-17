@@ -4,9 +4,7 @@ A packaged way of running a component library so that **an agreed contract drive
 
 People decide, helpers suggest.
 
-It was extracted from a production design system's roadmap. 
-
-The kit ships as a folder you copy from and as a Claude Code plugin you install.
+The kit ships as a folder you copy from. Claude Code plugin: to come.
 
 It provides the workflow around a coded component library: guidance, component contracts,
 checks and proposed fixes. Designers and design managers can use it to define the process;
@@ -36,6 +34,25 @@ People stay in charge of what to build, whether it's correct, what ships, what r
   shared guidance and one component contract. Later automation can wait. See
   [the personal-account route](#trying-it-on-a-personal-account) and the
   [small-team defaults](setup/ADOPT.md#small-team-defaults-and-later-settings).
+
+## See the workflow
+
+The full workflow is a target to adopt in stages. These visuals distinguish the work
+people approve from the work agents propose, and show which later pieces your team builds.
+
+[![Overview of the component-change journey, later helper loops, and adoption starting points](docs/images/kit-workflow-overview.png)](docs/images/kit-workflow-overview.png)
+
+<details>
+<summary>Who does what: people, agents and scripts</summary>
+
+[![Swimlanes showing people approving, agents proposing, and scripts checking and publishing](docs/images/kit-workflow-roles.png)](docs/images/kit-workflow-roles.png)
+
+</details>
+
+Editable Paper sources: [overview](https://app.paper.design/file/01M2N5F96XSXQAQZSXB9V0ARZ0/p-N-1/K98-1)
+and [roles and responsibilities](https://app.paper.design/file/01M2N5F96XSXQAQZSXB9V0ARZ0/p-N-1/KFK-1).
+Open either image for the full-size version. The pictures explain the process; the milestone
+docs define its requirements and proofs.
 
 ## The six milestones
 
@@ -97,7 +114,7 @@ LICENSE                        ← CC BY-SA 4.0 for the kit's own files
 
 ## Getting started
 
-### Prerequisites
+### Workflow requirements
 
 Have these before the first step. The kit itself has no build and nothing to install from a package registry; your library must pass the [starting checklist](setup/ADOPT.md#starting-checklist) first.
 
@@ -122,27 +139,12 @@ The gate workflow runs on GitHub's `ubuntu-latest` runners, which already have `
 
 ### Install
 
-Two routes. Both end with the same files in your repository.
+**Available now: copy the files.** Follow the scratch-copy steps below, then ask your
+coding agent to adopt the kit using the included `skills/adopt/SKILL.md` instructions.
 
-**Route A, Claude Code plugin** (recommended):
-
-```bash
-# from a clone of this kit, or once it is listed on a marketplace
-claude plugin install /path/to/self-running-ds-kit
-# then, inside your design system repository, in Claude Code:
-#   "adopt the kit"
-```
-
-The plugin puts the toolkit skills (`adopt`, `contract-review`, `review-triage` and the vendored ones) in your agent. The `adopt` skill reads `setup/ADOPT.md`, asks the decisions and placeholder questions in one round, fills `templates/`, and opens the milestone 0 PRs.
-
-From Claude Code, install through this repository’s own marketplace manifest (this is not an official marketplace listing):
-
-```text
-/plugin marketplace add jshmllr/self-running-ds-kit
-/plugin install self-running-ds-kit@self-running-ds-kit
-```
-
-**Route B, copy the files** (no plugin system, or another agent):
+**Claude Code plugin: to come.** Plugin scaffolding is included for future distribution.
+The folder-based setup is the current documented route; an official marketplace release
+has not been published.
 
 ```bash
 git clone https://github.com/jshmllr/self-running-ds-kit.git
@@ -162,7 +164,7 @@ to merge.
 ### Day Zero
 
 1. Read this file, then [`setup/ADOPT.md`](setup/ADOPT.md) § 1. Write down the eight decisions; they become the `Source:` lines of your rules.
-2. Install by Route A or B. Open the three milestone 0 PRs: toolkit, fast lane, gate.
+2. Copy and merge the files using the steps above. Open the three milestone 0 PRs: toolkit, fast lane, gate.
 3. Hand [`docs/milestones/0-gate.md`](docs/milestones/0-gate.md) § Admin steps to your admin. Nothing blocks a merge until they are done.
 4. Run the gate's three proofs (green, red, skipped) and paste the run links into the gate PR.
 5. Milestone 1: pick one small component, write its contract, open the contract PR, then the rules PR. At the end, run [`setup/proof-run.md`](setup/proof-run.md) once.
@@ -178,7 +180,7 @@ on whether your library already passes the starting checklist.
    in it: one component, one test, and a `package.json` with `lint`, `typecheck`, `build`
    and `test` scripts, plus a docs surface. Complete the starting checklist first; a
    framework starter alone may not provide these pieces.
-2. **Install the kit** by Route A or B and say "adopt the kit". Answer the decisions and
+2. **Copy the kit files** using the steps above, then ask your agent to "adopt the kit". Answer the decisions and
    placeholders; `ORG` is your username.
 3. **Open the gate PR** with `.github/workflows/pr-gate.yml`. Merge it yourself once it is
    green; no rule exists yet, so nothing stops you.
@@ -228,6 +230,31 @@ These came out of the origin's engineering review and shaped every later decisio
 - **Part kinds**: named spot · set of parts · swap what it's drawn as · built in.
 - **Toolkit**: the shared skills committed to the repo so every clone behaves the same.
 - **Constitution**: AGENTS.md, CLAUDE.md and the product-design skill.
+
+## Releases
+
+No tagged GitHub release has been published yet. The plugin manifests currently identify
+this source kit as `0.1.0`; that is not a published release or an official marketplace listing.
+
+- **Unreleased:** README refinements, author links, and updated workflow visuals.
+- **17 November 2026 — adoption updates:** clearer starting paths, safer setup checks,
+  explicit CI setup and review ownership. [Commit and validation notes](https://github.com/jshmllr/self-running-ds-kit/commit/50db561).
+- **17 November 2026 — initial kit:** the first public source snapshot.
+  [Initial commit](https://github.com/jshmllr/self-running-ds-kit/commit/48b7442).
+
+[Published releases](https://github.com/jshmllr/self-running-ds-kit/releases) ·
+[Source history](https://github.com/jshmllr/self-running-ds-kit/commits/main/) ·
+[Download current source](https://github.com/jshmllr/self-running-ds-kit/archive/refs/heads/main.zip).
+
+The complete fresh-repository proof run is still unverified. Each adopting team must run
+the milestone proofs against its own tools and branch rules.
+
+## About Josh
+
+Created and maintained by **Josh Miller**.
+
+[Website](https://jshmllr.com) · [LinkedIn](https://www.linkedin.com/in/jshmllr) ·
+[X](https://x.com/_jshmllr)
 
 ## Licence
 
