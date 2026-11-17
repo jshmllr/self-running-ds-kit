@@ -1,5 +1,7 @@
 # The Self-Running Design System Kit
 
+![The Self-Running Design System Kit: you make the calls. A workflow timeline where a person approves the contract, an agent builds in small PRs, one required gate goes green, and a named person ships it.](docs/images/social-preview.png)
+
 A packaged way of running a component library so that **an agreed contract drives every change, checks that can block a merge run where everyone sees them, agents do the routine work, and a named person makes every decision that matters.** 
 
 People decide, helpers suggest.
