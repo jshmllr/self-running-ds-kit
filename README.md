@@ -1,6 +1,6 @@
 # The Self-Running Design System Kit
 
-![The Self-Running Design System Kit: you make the calls. A workflow timeline where a person approves the contract, an agent builds in small PRs, one required gate goes green, and a named person ships it.](docs/images/social-preview.png)
+![The Self-Running Design System Kit: you make the calls. A source-available kit. A workflow timeline where a person approves the contract, an agent builds in small PRs, one required gate goes green, and a named person ships it.](docs/images/social-preview.png)
 
 A packaged way of running a component library so that **an agreed contract drives every change, checks that can block a merge run where everyone sees them, agents do the routine work, and a named person makes every decision that matters.** 
 
@@ -237,13 +237,16 @@ These shaped every later decision. Keep them when you extend the kit.
 
 ## Releases
 
-No tagged GitHub release has been published yet. The plugin manifests currently identify
-this source kit as `0.1.0`; that is not a published release or an official marketplace listing.
+The plugin manifests and the latest tag both identify the kit as `0.1.0`. It is not an
+official marketplace listing.
 
-- **Unreleased:** README refinements, author links, and updated workflow visuals.
+- **18 November 2026 — [v0.1.0](https://github.com/jshmllr/self-running-ds-kit/releases/tag/v0.1.0):**
+  the first tagged release. The kit's own files move to PolyForm Shield 1.0.0; Open in
+  Claude Code, Cursor and Codex buttons; the roles diagram shown inline; a simpler file
+  inventory; guidance for teams with their own skills; a social preview image.
 - **17 November 2026 — adoption updates:** clearer starting paths, safer setup checks,
   explicit CI setup and review ownership. [Commit and validation notes](https://github.com/jshmllr/self-running-ds-kit/commit/50db561).
-- **17 November 2026 — initial kit:** the first public source snapshot.
+- **17 November 2026 — initial kit:** the first public source snapshot, under CC BY-SA 4.0.
   [Initial commit](https://github.com/jshmllr/self-running-ds-kit/commit/48b7442).
 
 [Published releases](https://github.com/jshmllr/self-running-ds-kit/releases) ·
