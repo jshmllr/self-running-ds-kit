@@ -44,7 +44,7 @@ decide on them explicitly:
    release that carries it. A consumer may read "Draft, not reviewed" on an approved contract
    for a release cycle.
 
-The origin kept the full contract in the JSDoc: a single source beats a trimmed public copy
+The kit keeps the full contract in the JSDoc: a single source beats a trimmed public copy
 that drifts from the private one, and the Status flip (one final commit, one re-approval)
 keeps the stale window to one release. The alternative is to keep summary, Purpose, Keyboard
 and screen reader, and the `@example` blocks in the JSDoc and let the tests themselves be

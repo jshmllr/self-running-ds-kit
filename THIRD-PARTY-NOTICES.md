@@ -51,5 +51,6 @@ SOFTWARE.
 The skill declares `license: MIT` and `author: vercel` in its `SKILL.md` frontmatter. The
 upstream repository has no license file of its own.
 
-The kit's own files are licensed separately under CC BY-SA 4.0; see `LICENSE` and
-`README.md` § Licence.
+The kit's own files are licensed separately under PolyForm Shield 1.0.0; see `LICENSE` and
+`README.md` § Licence. That licence covers only Josh Miller's own files. The vendored
+skills above stay MIT.

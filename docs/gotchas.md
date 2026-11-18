@@ -61,7 +61,7 @@ a new one.
     Check your branch rules: if approvals are dismissed on push, the second approval is
     the one that counts; if they aren't, it still covers the final text.
 14. **The Proof list ships in the type definitions.** Consumers see test titles they can't
-    run. The origin kept it (one source beats two); the alternative is to keep summary,
+    run. The kit keeps it (one source beats two); the alternative is to keep summary,
     purpose, keyboard behaviour and examples in the shipped comment and let the tests be
     the proof. Record the choice as a decision either way.
 15. **Automated review can't reach a local docs server.** A review bot on the host reads
@@ -124,8 +124,8 @@ a new one.
 
 ## The helpers (milestones 2 to 5)
 
-34. **A check that is not in the gate's `needs` list never blocks.** The origin added three
-    checks and left them out of the gate job, so they could fail and the change would still
+34. **A check that is not in the gate's `needs` list never blocks.** Three checks were added
+    and left out of the gate job, so they could fail and the change would still
     merge once the gate was required. Every new job goes into `needs` the day it is added,
     except a report-only job that is waiting to prove it is stable.
 35. **In the merge queue the base branch name is blank.** A job that fetches
@@ -155,7 +155,7 @@ a new one.
 43. **Copied third-party skills trip the guidance check.** Their wording is upstream's and
     carries no `Source:` lines. List them in `THIRD-PARTY-NOTICES.md`; the check then skips
     the `Source:` and duplicate warnings for them and still checks their links.
-44. **The automation map drifts from the workflows.** The origin's map said a check ran only
+44. **The automation map drifts from the workflows.** The map said a check ran only
     on component changes when it ran on every change. Re-read the workflow trigger whenever
     you edit a row of `docs/automation-map.md`.
 

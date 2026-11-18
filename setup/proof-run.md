@@ -1,8 +1,7 @@
 # The proof run: does the kit work without its authors?
 
-The same test the origin used for its toolkit, applied to the whole kit: a fresh
-repository with no history, an agent given only the kit, and a fixed target. Wherever the
-agent gets stuck or asks a question only the origin team could answer, the kit has a hole.
+A fresh repository with no history, an agent given only the kit, and a fixed target.
+Wherever the agent gets stuck or asks a question the kit does not answer, it has a hole.
 
 ## Setup
 

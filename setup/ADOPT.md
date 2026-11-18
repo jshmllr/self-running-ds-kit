@@ -49,7 +49,7 @@ contract. Install each later piece with its milestone.
 Write each answer down where your team keeps decisions. Several later rules need a
 `Source:` line pointing at one of them.
 
-| Decision                                                                 | The origin's answer (adopt or replace)                                                        |
+| Decision                                                                 | Recommended answer (adopt or replace)                                                          |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | **Who holds admin** for the default branch's rules, and by which route    | Org owner edits the org ruleset, or a repo admin layers a repository ruleset. Personal account: the owner, repository ruleset only, no merge queue |
 | **Where the contract lives**                                             | In the component's own docs source; no new page                                                |
